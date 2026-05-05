@@ -29,8 +29,9 @@ export async function convertToMonochromeGif(opts: ConvertOptions): Promise<Blob
       throw new Error(`ffmpeg が終了コード ${exitCode} で失敗しました`);
     }
     const data = await ffmpeg.readFile(outputName);
-    const buffer = typeof data === 'string' ? new TextEncoder().encode(data) : data;
-    return new Blob([buffer], { type: 'image/gif' });
+    const bytes =
+      typeof data === 'string' ? new TextEncoder().encode(data) : new Uint8Array(data);
+    return new Blob([bytes], { type: 'image/gif' });
   } finally {
     await safeUnlink(ffmpeg, inputName);
     await safeUnlink(ffmpeg, outputName);
