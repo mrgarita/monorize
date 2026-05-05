@@ -1,0 +1,35 @@
+{
+  "name": "monorize",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "選択した動画をブラウザ内でモノクロのアニメーション GIF に変換する静的 SPA",
+  "scripts": {
+    "setup:ffmpeg": "node scripts/copy-ffmpeg-core.mjs",
+    "predev": "npm run setup:ffmpeg",
+    "prebuild": "npm run setup:ffmpeg",
+    "prepreview": "npm run setup:ffmpeg",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "volta": {
+    "node": "24.15.0"
+  },
+  "dependencies": {
+    "@ffmpeg/ffmpeg": "0.12.15",
+    "@ffmpeg/util": "0.12.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@ffmpeg/core": "0.12.10",
+    "@ffmpeg/core-mt": "0.12.10",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}
