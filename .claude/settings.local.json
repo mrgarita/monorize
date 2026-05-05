@@ -10,7 +10,10 @@
       "Bash(gh api *)",
       "WebFetch(domain:api.github.com)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(npm view *)",
+      "PowerShell(npm *)",
+      "PowerShell(winget install *)"
     ]
   }
 }
