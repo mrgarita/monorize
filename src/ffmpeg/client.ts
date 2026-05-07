@@ -1,5 +1,4 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { toBlobURL } from '@ffmpeg/util';
 import { detectThreadingMode, resolveCorePaths, type ThreadingMode } from './threading';
 
 export interface LoadOptions {
@@ -26,14 +25,24 @@ export async function loadFFmpeg(opts: LoadOptions = {}): Promise<FFmpegInstance
     ffmpeg.on('progress', ({ progress }) => opts.onProgress!(progress));
   }
 
+  // 絶対 URL に正規化する。Vite dev サーバは相対 URL の dynamic import を
+  // `?import` クエリ付きで自分の middleware に流し込み、public/ 配下のファイルは
+  // import 禁止として弾く。絶対 URL（http(s)://...）にすると Vite は外部 URL とみなして
+  // transform を素通しするので、ブラウザがそのまま public/ から fetch できる。
   const loadConfig: Parameters<FFmpeg['load']>[0] = {
-    coreURL: await toBlobURL(paths.coreURL, 'text/javascript'),
-    wasmURL: await toBlobURL(paths.wasmURL, 'application/wasm'),
+    coreURL: toAbsoluteURL(paths.coreURL),
+    wasmURL: toAbsoluteURL(paths.wasmURL),
   };
   if (paths.workerURL) {
-    loadConfig.workerURL = await toBlobURL(paths.workerURL, 'text/javascript');
+    loadConfig.workerURL = toAbsoluteURL(paths.workerURL);
   }
 
   await ffmpeg.load(loadConfig);
   return { ffmpeg, mode };
+}
+
+function toAbsoluteURL(url: string): string {
+  if (/^https?:\/\//.test(url)) return url;
+  if (typeof location === 'undefined') return url;
+  return new URL(url, location.origin).href;
 }
