@@ -10,13 +10,13 @@ const repoRoot = join(__dirname, '..');
 const sources = [
   {
     label: 'core (single-thread)',
-    from: join(repoRoot, 'node_modules/@ffmpeg/core/dist/umd'),
+    from: join(repoRoot, 'node_modules/@ffmpeg/core/dist/esm'),
     to: join(repoRoot, 'public/ffmpeg/core'),
     files: ['ffmpeg-core.js', 'ffmpeg-core.wasm'],
   },
   {
     label: 'core-mt (multi-thread)',
-    from: join(repoRoot, 'node_modules/@ffmpeg/core-mt/dist/umd'),
+    from: join(repoRoot, 'node_modules/@ffmpeg/core-mt/dist/esm'),
     to: join(repoRoot, 'public/ffmpeg/core-mt'),
     files: ['ffmpeg-core.js', 'ffmpeg-core.wasm', 'ffmpeg-core.worker.js'],
   },
