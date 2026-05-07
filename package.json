@@ -12,7 +12,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "m2b:harness": "node scripts/m2b-harness.mjs"
   },
   "volta": {
     "node": "24.15.0"
