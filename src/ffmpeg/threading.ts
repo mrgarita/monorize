@@ -7,7 +7,12 @@ export interface CorePaths {
 }
 
 export function detectThreadingMode(): ThreadingMode {
-  return globalThis.crossOriginIsolated ? 'mt' : 'st';
+  // 既定は st。core-mt は GIF エンコードで pthread 同期によりハングするため、
+  // GIF 出力では現状 st のみ実用可能。mt の調査用に ?ff=mt のみ受け付ける。
+  if (typeof location !== 'undefined') {
+    if (new URLSearchParams(location.search).get('ff') === 'mt') return 'mt';
+  }
+  return 'st';
 }
 
 export function resolveCorePaths(mode: ThreadingMode, baseUrl: string): CorePaths {
