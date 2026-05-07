@@ -10,9 +10,13 @@ export const RESOLUTIONS = [
 
 export const FPS_OPTIONS = [15, 24, 30, 60];
 
-// mandelbrot は計算量が大きく Phase 1 直列で完走しなかったため除外。
-// 並列化後の Phase 3 で再評価する。
-export const CONTENTS = ['testsrc2', 'noise'];
+// mandelbrot は計算量が大きく Phase 1 直列では完走しなかったため既定では
+// 除外する。Phase 3 で並列化後のスパイク評価のため、`M2B_INCLUDE_MANDELBROT=1`
+// を立てると CONTENTS に追加できるトグルを設けている。
+const baseContents = ['testsrc2', 'noise'];
+export const CONTENTS = process.env.M2B_INCLUDE_MANDELBROT === '1'
+  ? [...baseContents, 'mandelbrot']
+  : baseContents;
 
 export function generateSpec(idx, rand) {
   const [w, h] = pick(RESOLUTIONS, rand);
