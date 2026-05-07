@@ -102,12 +102,20 @@
 ### 10000 件テストの実施方法
 
 - 完全にローカルで実行（サーバ／ホスティングを介さない）
-- **ハイブリッド方式**で進める（2026-05-05 確定）：
-  - **本体（10,000 件）**：Node.js + `@ffmpeg/ffmpeg` を CLI 的に呼び、
-    Worker threads で並列実行する。最速で品質チェックを回せる
+- **ハイブリッド方式**で進める（2026-05-07 確定）：
+  - **本体（10,000 件）**：Node.js + **ネイティブ ffmpeg バイナリ**（既存の
+    `D:/work/ffmpeg/ffmpeg.exe`）を `child_process` で呼び、Worker threads
+    で並列実行する。フィルタチェーンはブラウザ側と同一
+    （`scale=W:trunc(ow/dar/2)*2,hue=s=0`）。`@ffmpeg/ffmpeg` 0.12.x は
+    公式に Node サポートを廃止しており、`new FFmpeg()` で
+    `Error: ffmpeg.wasm does not support nodejs` を投げるため Node では
+    使えない（M2-B Phase 0 spike で確認、2026-05-07）。ffmpeg.wasm は
+    内部的にネイティブ ffmpeg と同一のソースを WebAssembly にコンパイル
+    したものなので、同じフィルタを通せば品質仕様上は同等
   - **ブラウザ実環境検証（少数）**：`sample/` の 6 件のみ Playwright で
-    動かし、`vite preview` の COOP/COEP・SharedArrayBuffer・
-    マルチスレッド版 wasm の挙動を確認する
+    動かし、`vite preview` の COOP/COEP・SharedArrayBuffer・wasm の挙動を
+    確認する。ブラウザ側で `@ffmpeg/ffmpeg` を実際に使った変換が動作する
+    ことの保証はこの経路で取る
 
 ## サンプル動画
 
