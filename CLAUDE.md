@@ -91,8 +91,13 @@
   出力サイズは事前推定＋警告のみ（既定閾値 200 MB、ハード上限なし）
 - **入力サイズ警告**：500 MB 超は警告ダイアログ＋ユーザー了承で続行（ハード上限なし）
 - **完了条件**：10,000 件の変換品質チェックは **ローカル自動化** のハイブリッド方式
-  - 本体 10,000 件は Node.js + `@ffmpeg/ffmpeg` を CLI 的に呼んで Worker threads で並列実行
+  - 本体 10,000 件は Node.js + **ネイティブ ffmpeg バイナリ**（`D:/work/ffmpeg/ffmpeg.exe`）
+    を `child_process` で呼んで Worker threads で並列実行する。`@ffmpeg/ffmpeg` 0.12.x は
+    公式に Node サポート廃止のため Node では使えない（2026-05-07 spike で確認）。
+    ffmpeg.wasm はネイティブ ffmpeg と同一ソースの WebAssembly 版なので、同じフィルタ
+    `scale=W:trunc(ow/dar/2)*2,hue=s=0` を通せば品質仕様上は同等
   - `sample/` の 6 件のみ Playwright で `vite preview` を起動してブラウザ実環境を検証
+    （ここでブラウザ側 `@ffmpeg/ffmpeg` 経路の動作保証を取る）
 - **ffmpeg.wasm のバージョン pin**：`@ffmpeg/ffmpeg@0.12.15` /
   `@ffmpeg/util@0.12.2` / `@ffmpeg/core@0.12.10` / `@ffmpeg/core-mt@0.12.10`。
   core / core-mt はリポジトリ内 `public/ffmpeg/` に self-host する
