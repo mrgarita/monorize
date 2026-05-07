@@ -8,7 +8,7 @@
 //   npm run m2b:harness -- 42         # seed=42
 //   N=100 npm run m2b:harness         # 動作確認用に件数を絞る
 //   M2B_WORKERS=4 npm run m2b:harness # 並行数を上書き
-import { existsSync, mkdirSync, unlinkSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, unlinkSync } from 'node:fs';
 import { cpus } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,7 +24,9 @@ const WORK_DIR = join(repoRoot, 'tmp/m2b');
 
 const N = Number(process.env.N ?? 10000);
 const SEED = Number(process.argv[2] ?? process.env.SEED ?? 1);
-const WORKERS = Math.max(1, Number(process.env.M2B_WORKERS ?? cpus().length));
+// N < WORKERS のときに余ったワーカーがメッセージ受信を待ったまま終了しない
+// バグを避けるため、ジョブ件数を上限としてプールサイズを縮める。
+const WORKERS = Math.max(1, Math.min(N, Number(process.env.M2B_WORKERS ?? cpus().length)));
 
 if (!existsSync(FFMPEG)) die(`ffmpeg がありません: ${FFMPEG}`);
 if (!existsSync(FFPROBE)) die(`ffprobe がありません: ${FFPROBE}`);
@@ -47,6 +49,16 @@ let completed = 0;
 const t0 = Date.now();
 let nextLog = t0 + 1000;
 
+// 全件の所要時間をサンプル収集（pass / fail 両方）し、最後にパーセンタイル
+// を計算する。N=10,000 で要素 30,000 個 × 8 byte ≒ 240KB なので問題ない。
+const timings = { tGen: [], tConv: [], total: [] };
+
+// 失敗詳細は最初の fail 発生時にファイルを作る（fail=0 ならファイル無し）。
+// ファイル名は seed と起動時刻でユニークに。
+const failureTs = new Date().toISOString().replace(/[:.]/g, '-');
+const failureLogPath = join(WORK_DIR, `failures-s${SEED}-${failureTs}.jsonl`);
+let failureLogStarted = false;
+
 function dispatch(worker) {
   if (nextJob >= specs.length) return false;
   const spec = specs[nextJob++];
@@ -62,22 +74,37 @@ await new Promise((resolve) => {
   for (const worker of workers) {
     worker.on('message', (msg) => {
       completed++;
+      timings.tGen.push(msg.tGen);
+      timings.tConv.push(msg.tConv);
+      timings.total.push(msg.total);
+
       if (msg.result.pass) {
         pass++;
         safeUnlink(msg.inputPath);
         safeUnlink(msg.outputPath);
       } else {
         fail++;
+        const failedChecks = (msg.result.checks ?? [])
+          .filter((c) => !c.ok)
+          .map(({ name, detail }) => ({ name, detail }));
         const reasons = msg.result.error
           ? `error: ${msg.result.error}`
-          : (msg.result.checks ?? [])
-              .filter((c) => !c.ok)
-              .map((c) => `${c.name}: ${c.detail}`)
-              .join('; ');
+          : failedChecks.map((c) => `${c.name}: ${c.detail}`).join('; ');
         console.log(
           `[FAIL] idx=${msg.idx} ${msg.spec.width}x${msg.spec.height} ` +
             `fps=${msg.spec.fps} sec=${msg.spec.seconds} ${msg.spec.content} | ${reasons}`,
         );
+        appendFailure({
+          idx: msg.idx,
+          spec: msg.spec,
+          tGen: msg.tGen,
+          tConv: msg.tConv,
+          total: msg.total,
+          inputPath: msg.inputPath,
+          outputPath: msg.outputPath,
+          error: msg.result.error ?? null,
+          failedChecks,
+        });
       }
       if (Date.now() >= nextLog || completed === N) {
         printProgress();
@@ -100,7 +127,31 @@ const elapsed = (Date.now() - t0) / 1000;
 console.log(
   `=== summary: ${pass}/${N} pass, ${fail} fail (${formatTime(elapsed)}, rate=${(completed / elapsed).toFixed(1)}/s) ===`,
 );
+printTimings('tGen', timings.tGen);
+printTimings('tConv', timings.tConv);
+printTimings('total', timings.total);
+if (failureLogStarted) {
+  console.log(`[m2b] failures: ${failureLogPath} (${fail} 件)`);
+}
 process.exit(fail === 0 ? 0 : 1);
+
+function printTimings(label, values) {
+  if (values.length === 0) return;
+  const sorted = [...values].sort((a, b) => a - b);
+  const pct = (p) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))];
+  console.log(
+    `[m2b] timings(ms): ${label.padEnd(5)} ` +
+      `min=${sorted[0]} p50=${pct(0.5)} p90=${pct(0.9)} p99=${pct(0.99)} max=${sorted[sorted.length - 1]}`,
+  );
+}
+
+function appendFailure(record) {
+  if (!failureLogStarted) {
+    failureLogStarted = true;
+    console.log(`[m2b] failures will be written to ${failureLogPath}`);
+  }
+  appendFileSync(failureLogPath, `${JSON.stringify(record)}\n`);
+}
 
 function printProgress() {
   const elapsed = (Date.now() - t0) / 1000;
