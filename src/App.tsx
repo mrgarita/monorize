@@ -242,8 +242,9 @@ function pendingMessage(pending: Pending | null): ReactNode {
       return (
         <>
           <p>
-            このパラメータでの出力 GIF は <strong>約 {formatBytes(pending.estimatedBytes)}</strong>{' '}
-            になる見込みです。
+            このパラメータでの出力 GIF は{' '}
+            <strong>最大で約 {formatBytes(pending.estimatedBytes)}</strong> になる見込みです
+            （安全側に倒した推定値で、実際はこれより小さくなる傾向があります）。
           </p>
           <p className="muted small">
             横幅・フレームレートを下げると、出力サイズと変換時間を抑えられます。続行する場合は OK
