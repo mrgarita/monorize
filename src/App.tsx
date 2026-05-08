@@ -46,33 +46,30 @@ export function App() {
     saveUiMode(mode);
   }, [mode]);
 
-  const handleFile = useCallback(
-    async (file: File) => {
-      try {
-        const meta = await readVideoMeta(file);
-        const proceed = () => {
-          setState({ kind: 'params', file, meta });
-          setParams({ width: meta.width, fps: 30 });
-        };
-        if (mode === 'advanced' && file.size > INPUT_WARN_BYTES) {
-          setPending({
-            kind: 'input-size',
-            bytes: file.size,
-            onConfirm: () => {
-              setPending(null);
-              proceed();
-            },
-            onCancel: () => setPending(null),
-          });
-          return;
-        }
-        proceed();
-      } catch (e) {
-        setState({ kind: 'error', message: errorMessage(e) });
+  const handleFile = useCallback(async (file: File) => {
+    try {
+      const meta = await readVideoMeta(file);
+      const proceed = () => {
+        setState({ kind: 'params', file, meta });
+        setParams({ width: meta.width, fps: 30 });
+      };
+      if (file.size > INPUT_WARN_BYTES) {
+        setPending({
+          kind: 'input-size',
+          bytes: file.size,
+          onConfirm: () => {
+            setPending(null);
+            proceed();
+          },
+          onCancel: () => setPending(null),
+        });
+        return;
       }
-    },
-    [mode],
-  );
+      proceed();
+    } catch (e) {
+      setState({ kind: 'error', message: errorMessage(e) });
+    }
+  }, []);
 
   const startConvert = useCallback(async () => {
     if (state.kind !== 'params') return;
@@ -101,30 +98,28 @@ export function App() {
       }
     };
 
-    if (mode === 'advanced') {
-      const height = computeHeight(currentParams.width, meta.aspectRatio);
-      const estimated = estimateOutputBytes(
-        currentParams.width,
-        height,
-        currentParams.fps,
-        meta.duration,
-      );
-      if (estimated > OUTPUT_WARN_BYTES) {
-        setPending({
-          kind: 'output-size',
-          estimatedBytes: estimated,
-          onConfirm: () => {
-            setPending(null);
-            void runConvert();
-          },
-          onCancel: () => setPending(null),
-        });
-        return;
-      }
+    const height = computeHeight(currentParams.width, meta.aspectRatio);
+    const estimated = estimateOutputBytes(
+      currentParams.width,
+      height,
+      currentParams.fps,
+      meta.duration,
+    );
+    if (estimated > OUTPUT_WARN_BYTES) {
+      setPending({
+        kind: 'output-size',
+        estimatedBytes: estimated,
+        onConfirm: () => {
+          setPending(null);
+          void runConvert();
+        },
+        onCancel: () => setPending(null),
+      });
+      return;
     }
 
     void runConvert();
-  }, [state, params, mode]);
+  }, [state, params]);
 
   const reset = useCallback(() => {
     setState({ kind: 'idle' });
