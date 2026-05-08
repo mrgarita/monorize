@@ -3,7 +3,7 @@ import { ConfirmDialog } from './components/ConfirmDialog';
 import { DownloadButton } from './components/DownloadButton';
 import { DropZone } from './components/DropZone';
 import { ModeToggle } from './components/ModeToggle';
-import { ParameterPanel, computeHeight, type ConvertParams } from './components/ParameterPanel';
+import { ParameterPanel, type ConvertParams } from './components/ParameterPanel';
 import { ProgressBar } from './components/ProgressBar';
 import { convertToMonochromeGif } from './ffmpeg/convert';
 import { loadFFmpeg, type FFmpegInstance } from './ffmpeg/client';
@@ -37,7 +37,7 @@ type AppState =
 
 export function App() {
   const [state, setState] = useState<AppState>({ kind: 'idle' });
-  const [params, setParams] = useState<ConvertParams>({ width: 0, fps: 30 });
+  const [params, setParams] = useState<ConvertParams>({ width: 0, height: 0, fps: 30 });
   const [mode, setMode] = useState<UiMode>(() => loadUiMode());
   const [pending, setPending] = useState<Pending | null>(null);
   const ffmpegRef = useRef<FFmpegInstance | null>(null);
@@ -51,7 +51,7 @@ export function App() {
       const meta = await readVideoMeta(file);
       const proceed = () => {
         setState({ kind: 'params', file, meta });
-        setParams({ width: meta.width, fps: 30 });
+        setParams({ width: meta.width, height: meta.height, fps: 30 });
       };
       if (file.size > INPUT_WARN_BYTES) {
         setPending({
@@ -90,6 +90,7 @@ export function App() {
           ffmpeg: ffmpegRef.current.ffmpeg,
           file,
           width: currentParams.width,
+          height: currentParams.height,
           fps: currentParams.fps,
         });
         setState({ kind: 'done', file, blob });
@@ -98,10 +99,9 @@ export function App() {
       }
     };
 
-    const height = computeHeight(currentParams.width, meta.aspectRatio);
     const estimated = estimateOutputBytes(
       currentParams.width,
-      height,
+      currentParams.height,
       currentParams.fps,
       meta.duration,
     );
