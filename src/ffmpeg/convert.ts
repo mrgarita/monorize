@@ -5,11 +5,12 @@ export interface ConvertOptions {
   ffmpeg: FFmpeg;
   file: File;
   width: number;
+  height: number;
   fps: number;
 }
 
 export async function convertToMonochromeGif(opts: ConvertOptions): Promise<Blob> {
-  const { ffmpeg, file, width, fps } = opts;
+  const { ffmpeg, file, width, height, fps } = opts;
   const ext = extractExtension(file.name);
   const inputName = `input${ext}`;
   const outputName = 'output.gif';
@@ -20,7 +21,7 @@ export async function convertToMonochromeGif(opts: ConvertOptions): Promise<Blob
       '-i',
       inputName,
       '-vf',
-      `scale=${width}:trunc(ow/dar/2)*2,hue=s=0`,
+      `scale=${width}:${height},hue=s=0`,
       '-r',
       String(fps),
       outputName,

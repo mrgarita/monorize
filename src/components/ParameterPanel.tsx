@@ -4,6 +4,7 @@ import type { VideoMeta } from '../lib/videoMeta';
 
 export interface ConvertParams {
   width: number;
+  height: number;
   fps: number;
 }
 
@@ -21,12 +22,12 @@ export function ParameterPanel({ meta, value, onChange, disabled, showUnitToggle
   const [unit, setUnit] = useState<Unit>('px');
   const effectiveUnit: Unit = showUnitToggle ? unit : 'px';
 
-  const height = computeHeight(value.width, meta.aspectRatio);
   const maxWidth = meta.width;
 
   const updateWidth = (raw: number) => {
     const clamped = clamp(raw, SCALE_MIN_PX, maxWidth);
-    onChange({ ...value, width: makeEven(clamped) });
+    const w = makeEven(clamped);
+    onChange({ ...value, width: w, height: computeHeight(w, meta.aspectRatio) });
   };
   const updateFps = (raw: number) => {
     const clamped = clamp(raw, FPS_MIN, FPS_MAX);
@@ -110,7 +111,7 @@ export function ParameterPanel({ meta, value, onChange, disabled, showUnitToggle
           disabled={disabled}
         />
         <p className="muted small">
-          実効サイズ: {value.width} × {height} px（縦横比ロック）
+          実効サイズ: {value.width} × {value.height} px（縦横比ロック）
         </p>
       </div>
 
