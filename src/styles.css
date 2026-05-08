@@ -97,14 +97,14 @@ header p {
   gap: 0.4rem;
 }
 
-.parameter-panel .field__label-row {
+.parameter-panel .panel-controls {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
   flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0.75rem 0 0.25rem;
 }
 
+.parameter-panel .lock-toggle,
 .parameter-panel .unit-toggle {
   display: inline-flex;
   border: 1px solid var(--color-border);
@@ -112,6 +112,7 @@ header p {
   overflow: hidden;
 }
 
+.parameter-panel .lock-toggle__option,
 .parameter-panel .unit-toggle__option {
   padding: 0.2rem 0.6rem;
   border: none;
@@ -122,10 +123,12 @@ header p {
   color: inherit;
 }
 
+.parameter-panel .lock-toggle__option + .lock-toggle__option,
 .parameter-panel .unit-toggle__option + .unit-toggle__option {
   border-left: 1px solid var(--color-border);
 }
 
+.parameter-panel .lock-toggle__option.is-active,
 .parameter-panel .unit-toggle__option.is-active {
   background: var(--color-accent);
   color: white;
