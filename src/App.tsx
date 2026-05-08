@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { ConfirmDialog } from './components/ConfirmDialog';
 import { DownloadButton } from './components/DownloadButton';
 import { DropZone } from './components/DropZone';
 import { ModeToggle } from './components/ModeToggle';
@@ -6,8 +7,17 @@ import { ParameterPanel, type ConvertParams } from './components/ParameterPanel'
 import { ProgressBar } from './components/ProgressBar';
 import { convertToMonochromeGif } from './ffmpeg/convert';
 import { loadFFmpeg, type FFmpegInstance } from './ffmpeg/client';
+import { INPUT_WARN_BYTES } from './lib/constants';
+import { formatBytes } from './lib/format';
 import { readVideoMeta, type VideoMeta } from './lib/videoMeta';
 import { loadUiMode, saveUiMode, type UiMode } from './lib/uiMode';
+
+type Pending = {
+  kind: 'input-size';
+  bytes: number;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
 
 type AppState =
   | { kind: 'idle' }
@@ -21,21 +31,40 @@ export function App() {
   const [state, setState] = useState<AppState>({ kind: 'idle' });
   const [params, setParams] = useState<ConvertParams>({ width: 0, fps: 30 });
   const [mode, setMode] = useState<UiMode>(() => loadUiMode());
+  const [pending, setPending] = useState<Pending | null>(null);
   const ffmpegRef = useRef<FFmpegInstance | null>(null);
 
   useEffect(() => {
     saveUiMode(mode);
   }, [mode]);
 
-  const handleFile = useCallback(async (file: File) => {
-    try {
-      const meta = await readVideoMeta(file);
-      setState({ kind: 'params', file, meta });
-      setParams({ width: meta.width, fps: 30 });
-    } catch (e) {
-      setState({ kind: 'error', message: errorMessage(e) });
-    }
-  }, []);
+  const handleFile = useCallback(
+    async (file: File) => {
+      try {
+        const meta = await readVideoMeta(file);
+        const proceed = () => {
+          setState({ kind: 'params', file, meta });
+          setParams({ width: meta.width, fps: 30 });
+        };
+        if (mode === 'advanced' && file.size > INPUT_WARN_BYTES) {
+          setPending({
+            kind: 'input-size',
+            bytes: file.size,
+            onConfirm: () => {
+              setPending(null);
+              proceed();
+            },
+            onCancel: () => setPending(null),
+          });
+          return;
+        }
+        proceed();
+      } catch (e) {
+        setState({ kind: 'error', message: errorMessage(e) });
+      }
+    },
+    [mode],
+  );
 
   const startConvert = useCallback(async () => {
     if (state.kind !== 'params') return;
@@ -141,8 +170,43 @@ export function App() {
           </div>
         </section>
       )}
+
+      <ConfirmDialog
+        open={pending !== null}
+        title={pendingTitle(pending)}
+        message={pendingMessage(pending)}
+        confirmLabel="続行"
+        cancelLabel="キャンセル"
+        severity="warning"
+        onConfirm={() => pending?.onConfirm()}
+        onCancel={() => pending?.onCancel()}
+      />
     </main>
   );
+}
+
+function pendingTitle(pending: Pending | null): string {
+  if (!pending) return '';
+  switch (pending.kind) {
+    case 'input-size':
+      return '大きな動画ファイルです';
+  }
+}
+
+function pendingMessage(pending: Pending | null): ReactNode {
+  if (!pending) return null;
+  switch (pending.kind) {
+    case 'input-size':
+      return (
+        <>
+          <p>
+            選択された動画は <strong>{formatBytes(pending.bytes)}</strong> あります。
+            ブラウザで扱える容量はメモリ次第で、変換中にタブが落ちる可能性があります。
+          </p>
+          <p className="muted small">続行するか、もう少し小さなファイルを選び直してください。</p>
+        </>
+      );
+  }
 }
 
 function errorMessage(e: unknown): string {
@@ -155,15 +219,3 @@ function stripExt(name: string): string {
   return dot > 0 ? name.slice(0, dot) : name;
 }
 
-function formatBytes(bytes: number): string {
-  if (bytes >= 1024 * 1024 * 1024) {
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-  }
-  if (bytes >= 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-  if (bytes >= 1024) {
-    return `${(bytes / 1024).toFixed(0)} KB`;
-  }
-  return `${bytes} B`;
-}
