@@ -196,6 +196,16 @@ export function ParameterPanel({ meta, value, onChange, disabled, advanced }: Pr
             （元動画 {meta.height} px）
           </label>
           <input
+            type="range"
+            min={heightMin}
+            max={heightMaxDisplay}
+            step={heightStep}
+            value={heightDisplay}
+            onChange={onHeightInput}
+            disabled={disabled}
+            aria-label={effectiveUnit === 'px' ? '縦幅 (px)' : '縦幅 (%)'}
+          />
+          <input
             type="number"
             min={heightMin}
             max={heightMaxDisplay}
