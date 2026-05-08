@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import { FPS_MAX, FPS_MIN, SCALE_MIN_PX } from '../lib/constants';
 import type { VideoMeta } from '../lib/videoMeta';
 
@@ -23,6 +23,19 @@ export function ParameterPanel({ meta, value, onChange, disabled, advanced }: Pr
   const [lockAspect, setLockAspect] = useState(true);
   const effectiveUnit: Unit = advanced ? unit : 'px';
   const effectiveLock = advanced ? lockAspect : true;
+
+  // シンプルモードに戻った時、詳細モードで個別指定にしていた残り値（縦横比が
+  // 崩れた height）を縦横比どおりに揃え直す。advanced=true のあいだは編集
+  // ロジックが整合性を維持するので、補正が必要なのは advanced=false のみ。
+  useEffect(() => {
+    if (advanced) return;
+    const expectedHeight = computeHeight(value.width, meta.aspectRatio);
+    if (value.height !== expectedHeight) {
+      onChange({ ...value, height: expectedHeight });
+    }
+    // value.height / onChange は補正トリガとして含めない（無限ループ回避）
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [advanced, value.width, meta.aspectRatio]);
 
   const maxWidth = meta.width;
   const maxHeight = meta.height;
