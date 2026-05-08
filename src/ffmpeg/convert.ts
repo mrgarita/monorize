@@ -21,7 +21,10 @@ export async function convertToMonochromeGif(opts: ConvertOptions): Promise<Blob
       '-i',
       inputName,
       '-vf',
-      `scale=${width}:${height},hue=s=0`,
+      // setsar=1 で出力ピクセル比を 1:1 に正規化する。これがないと、
+      // anamorphic な入力動画（GoPro 系などの SAR 非 1:1）の SAR が出力に
+      // 引き継がれ、ピクセル数とビューワ上の表示サイズが食い違う。
+      `scale=${width}:${height},setsar=1,hue=s=0`,
       '-r',
       String(fps),
       outputName,
