@@ -15,82 +15,156 @@ interface Props {
   value: ConvertParams;
   onChange: (next: ConvertParams) => void;
   disabled?: boolean;
-  showUnitToggle?: boolean;
+  advanced?: boolean;
 }
 
-export function ParameterPanel({ meta, value, onChange, disabled, showUnitToggle }: Props) {
+export function ParameterPanel({ meta, value, onChange, disabled, advanced }: Props) {
   const [unit, setUnit] = useState<Unit>('px');
-  const effectiveUnit: Unit = showUnitToggle ? unit : 'px';
+  const [lockAspect, setLockAspect] = useState(true);
+  const effectiveUnit: Unit = advanced ? unit : 'px';
+  const effectiveLock = advanced ? lockAspect : true;
 
   const maxWidth = meta.width;
+  const maxHeight = meta.height;
+
+  const setSize = (rawWidth: number, rawHeight: number) => {
+    const w = makeEven(clamp(rawWidth, SCALE_MIN_PX, maxWidth));
+    const h = makeEven(clamp(rawHeight, SCALE_MIN_PX, maxHeight));
+    onChange({ ...value, width: w, height: h });
+  };
 
   const updateWidth = (raw: number) => {
-    const clamped = clamp(raw, SCALE_MIN_PX, maxWidth);
-    const w = makeEven(clamped);
-    onChange({ ...value, width: w, height: computeHeight(w, meta.aspectRatio) });
+    const w = makeEven(clamp(raw, SCALE_MIN_PX, maxWidth));
+    if (effectiveLock) {
+      const h = computeHeight(w, meta.aspectRatio);
+      onChange({ ...value, width: w, height: h });
+    } else {
+      onChange({ ...value, width: w });
+    }
   };
+
+  const updateHeight = (raw: number) => {
+    const h = makeEven(clamp(raw, SCALE_MIN_PX, maxHeight));
+    if (effectiveLock) {
+      const w = computeWidth(h, meta.aspectRatio);
+      onChange({ ...value, width: w, height: h });
+    } else {
+      onChange({ ...value, height: h });
+    }
+  };
+
   const updateFps = (raw: number) => {
     const clamped = clamp(raw, FPS_MIN, FPS_MAX);
     onChange({ ...value, fps: clamped });
   };
 
-  const percentMin = Math.max(1, Math.ceil((SCALE_MIN_PX / maxWidth) * 100));
-  const percentMax = 100;
+  // 横幅: 表示値・min・max・step
+  const widthPercentMin = Math.max(1, Math.ceil((SCALE_MIN_PX / maxWidth) * 100));
   const widthDisplay =
     effectiveUnit === 'px' ? value.width : Math.round((value.width / maxWidth) * 100);
-  const widthMin = effectiveUnit === 'px' ? SCALE_MIN_PX : percentMin;
-  const widthMaxDisplay = effectiveUnit === 'px' ? maxWidth : percentMax;
+  const widthMin = effectiveUnit === 'px' ? SCALE_MIN_PX : widthPercentMin;
+  const widthMaxDisplay = effectiveUnit === 'px' ? maxWidth : 100;
   const widthStep = effectiveUnit === 'px' ? 2 : 1;
+
+  // 縦幅: 表示値・min・max・step
+  const heightPercentMin = Math.max(1, Math.ceil((SCALE_MIN_PX / maxHeight) * 100));
+  const heightDisplay =
+    effectiveUnit === 'px' ? value.height : Math.round((value.height / maxHeight) * 100);
+  const heightMin = effectiveUnit === 'px' ? SCALE_MIN_PX : heightPercentMin;
+  const heightMaxDisplay = effectiveUnit === 'px' ? maxHeight : 100;
+  const heightStep = effectiveUnit === 'px' ? 2 : 1;
 
   const handleWidthChange = (raw: number) => {
     if (effectiveUnit === 'px') {
       updateWidth(raw);
     } else {
-      const pct = clamp(raw, percentMin, percentMax);
+      const pct = clamp(raw, widthPercentMin, 100);
       updateWidth(Math.round((pct / 100) * maxWidth));
+    }
+  };
+
+  const handleHeightChange = (raw: number) => {
+    if (effectiveUnit === 'px') {
+      updateHeight(raw);
+    } else {
+      const pct = clamp(raw, heightPercentMin, 100);
+      updateHeight(Math.round((pct / 100) * maxHeight));
     }
   };
 
   const onWidthInput = (e: ChangeEvent<HTMLInputElement>) =>
     handleWidthChange(Number(e.target.value));
+  const onHeightInput = (e: ChangeEvent<HTMLInputElement>) =>
+    handleHeightChange(Number(e.target.value));
   const onFpsInput = (e: ChangeEvent<HTMLInputElement>) => updateFps(Number(e.target.value));
+
+  // ロック OFF → ON に戻したときに、現在の縦横比を強制的に元動画比へ揃える。
+  // ロック ON のあいだは編集ロジックが連動更新するので不変条件は維持される。
+  const handleLockChange = (next: boolean) => {
+    setLockAspect(next);
+    if (next) {
+      // 現在の width を基準に height を縦横比どおりに再計算
+      setSize(value.width, computeHeight(value.width, meta.aspectRatio));
+    }
+  };
 
   return (
     <section className="parameter-panel" aria-label="変換パラメータ">
       <h2>変換パラメータ</h2>
 
-      <div className="field">
-        <div className="field__label-row">
-          <label>
-            横幅:{' '}
-            <strong>
-              {effectiveUnit === 'px' ? `${value.width} px` : `${widthDisplay}%`}
-            </strong>{' '}
-            （元動画 {meta.width} px）
-          </label>
-          {showUnitToggle && (
-            <div className="unit-toggle" role="group" aria-label="横幅の単位">
-              <button
-                type="button"
-                className={`unit-toggle__option ${unit === 'px' ? 'is-active' : ''}`}
-                aria-pressed={unit === 'px'}
-                onClick={() => setUnit('px')}
-                disabled={disabled}
-              >
-                px
-              </button>
-              <button
-                type="button"
-                className={`unit-toggle__option ${unit === 'percent' ? 'is-active' : ''}`}
-                aria-pressed={unit === 'percent'}
-                onClick={() => setUnit('percent')}
-                disabled={disabled}
-              >
-                %
-              </button>
-            </div>
-          )}
+      {advanced && (
+        <div className="panel-controls">
+          <div className="lock-toggle" role="group" aria-label="縦横比">
+            <button
+              type="button"
+              className={`lock-toggle__option ${lockAspect ? 'is-active' : ''}`}
+              aria-pressed={lockAspect}
+              onClick={() => handleLockChange(true)}
+              disabled={disabled}
+            >
+              縦横比ロック
+            </button>
+            <button
+              type="button"
+              className={`lock-toggle__option ${!lockAspect ? 'is-active' : ''}`}
+              aria-pressed={!lockAspect}
+              onClick={() => handleLockChange(false)}
+              disabled={disabled}
+            >
+              個別指定
+            </button>
+          </div>
+          <div className="unit-toggle" role="group" aria-label="サイズの単位">
+            <button
+              type="button"
+              className={`unit-toggle__option ${unit === 'px' ? 'is-active' : ''}`}
+              aria-pressed={unit === 'px'}
+              onClick={() => setUnit('px')}
+              disabled={disabled}
+            >
+              px
+            </button>
+            <button
+              type="button"
+              className={`unit-toggle__option ${unit === 'percent' ? 'is-active' : ''}`}
+              aria-pressed={unit === 'percent'}
+              onClick={() => setUnit('percent')}
+              disabled={disabled}
+            >
+              %
+            </button>
+          </div>
         </div>
+      )}
+
+      <div className="field">
+        <label>
+          横幅:{' '}
+          <strong>
+            {effectiveUnit === 'px' ? `${value.width} px` : `${widthDisplay}%`}
+          </strong>{' '}
+          （元動画 {meta.width} px）
+        </label>
         <input
           type="range"
           min={widthMin}
@@ -110,10 +184,36 @@ export function ParameterPanel({ meta, value, onChange, disabled, showUnitToggle
           onChange={onWidthInput}
           disabled={disabled}
         />
-        <p className="muted small">
-          実効サイズ: {value.width} × {value.height} px（縦横比ロック）
-        </p>
       </div>
+
+      {advanced ? (
+        <div className="field">
+          <label>
+            縦幅:{' '}
+            <strong>
+              {effectiveUnit === 'px' ? `${value.height} px` : `${heightDisplay}%`}
+            </strong>{' '}
+            （元動画 {meta.height} px）
+          </label>
+          <input
+            type="number"
+            min={heightMin}
+            max={heightMaxDisplay}
+            step={heightStep}
+            value={heightDisplay}
+            onChange={onHeightInput}
+            disabled={disabled}
+          />
+          <p className="muted small">
+            実効サイズ: {value.width} × {value.height} px
+            {effectiveLock ? '（縦横比ロック）' : '（個別指定）'}
+          </p>
+        </div>
+      ) : (
+        <p className="muted small">
+          高さ: {value.height} px（縦横比ロック）
+        </p>
+      )}
 
       <div className="field">
         <label>
@@ -153,4 +253,9 @@ function makeEven(n: number): number {
 export function computeHeight(width: number, aspectRatio: number): number {
   if (!aspectRatio || !Number.isFinite(aspectRatio)) return 0;
   return makeEven(Math.max(2, Math.round(width / aspectRatio)));
+}
+
+export function computeWidth(height: number, aspectRatio: number): number {
+  if (!aspectRatio || !Number.isFinite(aspectRatio)) return 0;
+  return makeEven(Math.max(2, Math.round(height * aspectRatio)));
 }

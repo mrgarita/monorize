@@ -147,7 +147,7 @@ export function App() {
             meta={state.meta}
             value={params}
             onChange={setParams}
-            showUnitToggle={mode === 'advanced'}
+            advanced={mode === 'advanced'}
           />
           <div className="actions">
             <button type="button" className="primary" onClick={startConvert}>
