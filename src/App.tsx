@@ -84,7 +84,12 @@ export function App() {
             選択中: <strong>{state.file.name}</strong>（{formatBytes(state.file.size)}・
             {state.meta.width}×{state.meta.height}・{state.meta.duration.toFixed(1)} 秒）
           </p>
-          <ParameterPanel meta={state.meta} value={params} onChange={setParams} />
+          <ParameterPanel
+            meta={state.meta}
+            value={params}
+            onChange={setParams}
+            showUnitToggle={mode === 'advanced'}
+          />
           <div className="actions">
             <button type="button" className="primary" onClick={startConvert}>
               変換を実行

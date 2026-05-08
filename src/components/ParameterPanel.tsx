@@ -1,4 +1,4 @@
-import type { ChangeEvent } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { FPS_MAX, FPS_MIN, SCALE_MIN_PX } from '../lib/constants';
 import type { VideoMeta } from '../lib/videoMeta';
 
@@ -7,14 +7,20 @@ export interface ConvertParams {
   fps: number;
 }
 
+type Unit = 'px' | 'percent';
+
 interface Props {
   meta: VideoMeta;
   value: ConvertParams;
   onChange: (next: ConvertParams) => void;
   disabled?: boolean;
+  showUnitToggle?: boolean;
 }
 
-export function ParameterPanel({ meta, value, onChange, disabled }: Props) {
+export function ParameterPanel({ meta, value, onChange, disabled, showUnitToggle }: Props) {
+  const [unit, setUnit] = useState<Unit>('px');
+  const effectiveUnit: Unit = showUnitToggle ? unit : 'px';
+
   const height = computeHeight(value.width, meta.aspectRatio);
   const maxWidth = meta.width;
 
@@ -27,7 +33,25 @@ export function ParameterPanel({ meta, value, onChange, disabled }: Props) {
     onChange({ ...value, fps: clamped });
   };
 
-  const onWidthInput = (e: ChangeEvent<HTMLInputElement>) => updateWidth(Number(e.target.value));
+  const percentMin = Math.max(1, Math.ceil((SCALE_MIN_PX / maxWidth) * 100));
+  const percentMax = 100;
+  const widthDisplay =
+    effectiveUnit === 'px' ? value.width : Math.round((value.width / maxWidth) * 100);
+  const widthMin = effectiveUnit === 'px' ? SCALE_MIN_PX : percentMin;
+  const widthMaxDisplay = effectiveUnit === 'px' ? maxWidth : percentMax;
+  const widthStep = effectiveUnit === 'px' ? 2 : 1;
+
+  const handleWidthChange = (raw: number) => {
+    if (effectiveUnit === 'px') {
+      updateWidth(raw);
+    } else {
+      const pct = clamp(raw, percentMin, percentMax);
+      updateWidth(Math.round((pct / 100) * maxWidth));
+    }
+  };
+
+  const onWidthInput = (e: ChangeEvent<HTMLInputElement>) =>
+    handleWidthChange(Number(e.target.value));
   const onFpsInput = (e: ChangeEvent<HTMLInputElement>) => updateFps(Number(e.target.value));
 
   return (
@@ -35,28 +59,59 @@ export function ParameterPanel({ meta, value, onChange, disabled }: Props) {
       <h2>変換パラメータ</h2>
 
       <div className="field">
-        <label>
-          横幅: <strong>{value.width} px</strong> （元動画 {meta.width} px）
-        </label>
+        <div className="field__label-row">
+          <label>
+            横幅:{' '}
+            <strong>
+              {effectiveUnit === 'px' ? `${value.width} px` : `${widthDisplay}%`}
+            </strong>{' '}
+            （元動画 {meta.width} px）
+          </label>
+          {showUnitToggle && (
+            <div className="unit-toggle" role="group" aria-label="横幅の単位">
+              <button
+                type="button"
+                className={`unit-toggle__option ${unit === 'px' ? 'is-active' : ''}`}
+                aria-pressed={unit === 'px'}
+                onClick={() => setUnit('px')}
+                disabled={disabled}
+              >
+                px
+              </button>
+              <button
+                type="button"
+                className={`unit-toggle__option ${unit === 'percent' ? 'is-active' : ''}`}
+                aria-pressed={unit === 'percent'}
+                onClick={() => setUnit('percent')}
+                disabled={disabled}
+              >
+                %
+              </button>
+            </div>
+          )}
+        </div>
         <input
           type="range"
-          min={SCALE_MIN_PX}
-          max={maxWidth}
-          value={value.width}
+          min={widthMin}
+          max={widthMaxDisplay}
+          step={widthStep}
+          value={widthDisplay}
           onChange={onWidthInput}
           disabled={disabled}
-          aria-label="横幅 (px)"
+          aria-label={effectiveUnit === 'px' ? '横幅 (px)' : '横幅 (%)'}
         />
         <input
           type="number"
-          min={SCALE_MIN_PX}
-          max={maxWidth}
-          step={2}
-          value={value.width}
+          min={widthMin}
+          max={widthMaxDisplay}
+          step={widthStep}
+          value={widthDisplay}
           onChange={onWidthInput}
           disabled={disabled}
         />
-        <p className="muted small">高さ: {height} px（縦横比ロック）</p>
+        <p className="muted small">
+          実効サイズ: {value.width} × {height} px（縦横比ロック）
+        </p>
       </div>
 
       <div className="field">
