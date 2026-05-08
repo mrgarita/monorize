@@ -1,11 +1,13 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { DownloadButton } from './components/DownloadButton';
 import { DropZone } from './components/DropZone';
+import { ModeToggle } from './components/ModeToggle';
 import { ParameterPanel, type ConvertParams } from './components/ParameterPanel';
 import { ProgressBar } from './components/ProgressBar';
 import { convertToMonochromeGif } from './ffmpeg/convert';
 import { loadFFmpeg, type FFmpegInstance } from './ffmpeg/client';
 import { readVideoMeta, type VideoMeta } from './lib/videoMeta';
+import { loadUiMode, saveUiMode, type UiMode } from './lib/uiMode';
 
 type AppState =
   | { kind: 'idle' }
@@ -18,7 +20,12 @@ type AppState =
 export function App() {
   const [state, setState] = useState<AppState>({ kind: 'idle' });
   const [params, setParams] = useState<ConvertParams>({ width: 0, fps: 30 });
+  const [mode, setMode] = useState<UiMode>(() => loadUiMode());
   const ffmpegRef = useRef<FFmpegInstance | null>(null);
+
+  useEffect(() => {
+    saveUiMode(mode);
+  }, [mode]);
 
   const handleFile = useCallback(async (file: File) => {
     try {
@@ -62,7 +69,10 @@ export function App() {
   return (
     <main>
       <header>
-        <h1>Monorize</h1>
+        <div className="header-row">
+          <h1>Monorize</h1>
+          <ModeToggle value={mode} onChange={setMode} />
+        </div>
         <p>動画をブラウザ内でモノクロのアニメーション GIF に変換します。動画はサーバへ送信されません。</p>
       </header>
 
