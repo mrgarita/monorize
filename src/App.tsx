@@ -3,21 +3,29 @@ import { ConfirmDialog } from './components/ConfirmDialog';
 import { DownloadButton } from './components/DownloadButton';
 import { DropZone } from './components/DropZone';
 import { ModeToggle } from './components/ModeToggle';
-import { ParameterPanel, type ConvertParams } from './components/ParameterPanel';
+import { ParameterPanel, computeHeight, type ConvertParams } from './components/ParameterPanel';
 import { ProgressBar } from './components/ProgressBar';
 import { convertToMonochromeGif } from './ffmpeg/convert';
 import { loadFFmpeg, type FFmpegInstance } from './ffmpeg/client';
-import { INPUT_WARN_BYTES } from './lib/constants';
+import { INPUT_WARN_BYTES, OUTPUT_WARN_BYTES } from './lib/constants';
+import { estimateOutputBytes } from './lib/estimateOutput';
 import { formatBytes } from './lib/format';
 import { readVideoMeta, type VideoMeta } from './lib/videoMeta';
 import { loadUiMode, saveUiMode, type UiMode } from './lib/uiMode';
 
-type Pending = {
-  kind: 'input-size';
-  bytes: number;
-  onConfirm: () => void;
-  onCancel: () => void;
-};
+type Pending =
+  | {
+      kind: 'input-size';
+      bytes: number;
+      onConfirm: () => void;
+      onCancel: () => void;
+    }
+  | {
+      kind: 'output-size';
+      estimatedBytes: number;
+      onConfirm: () => void;
+      onCancel: () => void;
+    };
 
 type AppState =
   | { kind: 'idle' }
@@ -70,26 +78,53 @@ export function App() {
     if (state.kind !== 'params') return;
     const { file, meta } = state;
     const currentParams = params;
-    setState({ kind: 'preparing', file, meta, params: currentParams });
-    try {
-      if (!ffmpegRef.current) {
-        ffmpegRef.current = await loadFFmpeg({
-          onProgress: (p) =>
-            setState((s) => (s.kind === 'converting' ? { ...s, progress: p } : s)),
+
+    const runConvert = async () => {
+      setState({ kind: 'preparing', file, meta, params: currentParams });
+      try {
+        if (!ffmpegRef.current) {
+          ffmpegRef.current = await loadFFmpeg({
+            onProgress: (p) =>
+              setState((s) => (s.kind === 'converting' ? { ...s, progress: p } : s)),
+          });
+        }
+        setState({ kind: 'converting', file, meta, params: currentParams, progress: 0 });
+        const blob = await convertToMonochromeGif({
+          ffmpeg: ffmpegRef.current.ffmpeg,
+          file,
+          width: currentParams.width,
+          fps: currentParams.fps,
         });
+        setState({ kind: 'done', file, blob });
+      } catch (e) {
+        setState({ kind: 'error', message: errorMessage(e) });
       }
-      setState({ kind: 'converting', file, meta, params: currentParams, progress: 0 });
-      const blob = await convertToMonochromeGif({
-        ffmpeg: ffmpegRef.current.ffmpeg,
-        file,
-        width: currentParams.width,
-        fps: currentParams.fps,
-      });
-      setState({ kind: 'done', file, blob });
-    } catch (e) {
-      setState({ kind: 'error', message: errorMessage(e) });
+    };
+
+    if (mode === 'advanced') {
+      const height = computeHeight(currentParams.width, meta.aspectRatio);
+      const estimated = estimateOutputBytes(
+        currentParams.width,
+        height,
+        currentParams.fps,
+        meta.duration,
+      );
+      if (estimated > OUTPUT_WARN_BYTES) {
+        setPending({
+          kind: 'output-size',
+          estimatedBytes: estimated,
+          onConfirm: () => {
+            setPending(null);
+            void runConvert();
+          },
+          onCancel: () => setPending(null),
+        });
+        return;
+      }
     }
-  }, [state, params]);
+
+    void runConvert();
+  }, [state, params, mode]);
 
   const reset = useCallback(() => {
     setState({ kind: 'idle' });
@@ -190,6 +225,8 @@ function pendingTitle(pending: Pending | null): string {
   switch (pending.kind) {
     case 'input-size':
       return '大きな動画ファイルです';
+    case 'output-size':
+      return '出力 GIF が大きくなる可能性があります';
   }
 }
 
@@ -204,6 +241,19 @@ function pendingMessage(pending: Pending | null): ReactNode {
             ブラウザで扱える容量はメモリ次第で、変換中にタブが落ちる可能性があります。
           </p>
           <p className="muted small">続行するか、もう少し小さなファイルを選び直してください。</p>
+        </>
+      );
+    case 'output-size':
+      return (
+        <>
+          <p>
+            このパラメータでの出力 GIF は <strong>約 {formatBytes(pending.estimatedBytes)}</strong>{' '}
+            になる見込みです。
+          </p>
+          <p className="muted small">
+            横幅・フレームレートを下げると、出力サイズと変換時間を抑えられます。続行する場合は OK
+            を押してください。
+          </p>
         </>
       );
   }
