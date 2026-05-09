@@ -1,29 +1,53 @@
 # Monorize
 
-アップロードされた動画を **モノクロのアニメーション GIF** に変換し、ダウンロード
-できる Web アプリケーション。
+ユーザーが選択した動画を **モノクロのアニメーション GIF** に変換し、
+ダウンロードできる Web アプリケーション。**変換処理はすべてブラウザ内で
+完結**し、動画はサーバへ送信されません（純粋な静的 SPA）。
 
 ## ステータス
 
-**仕様策定段階** — 実装はまだ存在しません。現時点では仕様書とサンプル素材のみ
-を管理しています。技術スタック（フロントエンド／バックエンド／変換エンジン等）
-は未定です。
+**実装段階**（M3-B 完了 / M3-A 残）。技術スタックと主要マイルストーンは
+以下の通り（詳細は [`project.md`](./project.md)）。
+
+- **フロントエンド**：Vite + React + TypeScript
+- **変換エンジン**：[ffmpeg.wasm](https://ffmpegwasm.netlify.app/) 0.12 系
+  （`public/ffmpeg/` に self-host）
+- **ステージング**：GitHub Pages（st 版） — 公開中
+- **本番**：XServer（mt 版予定） — 未着手
+
+| マイルストーン | 状態 |
+|---|---|
+| M0 仕様策定 | ✅ |
+| M1 実装基盤・UI 骨格 | ✅ |
+| M2-A `sample/` 6 本の実機検証 | ✅ |
+| M2-B 10,000 件のローカル自動化 | ✅ |
+| M3-B GitHub Pages ステージング | ✅ |
+| M3-A XServer 本番デプロイ | ⬜ |
 
 ## 主要ファイル
 
 - [`project.md`](./project.md) — プロダクト仕様書（要件、制約、完了条件）
 - [`CLAUDE.md`](./CLAUDE.md) — Claude Code（claude.ai/code）向けの作業ガイド
+- `src/` — アプリ本体（React コンポーネント・ffmpeg ラッパ・変換ロジック）
+- `public/ffmpeg/` — self-host する `@ffmpeg/core` 実体（`scripts/copy-ffmpeg-core.mjs`
+  が `node_modules` から `predev`/`prebuild` でコピー。`.gitignore` 済）
+- `scripts/` — `copy-ffmpeg-core.mjs`（self-host コピー）と `m2b/`（10,000 件
+  ローカル自動化ハーネス）
+- `.github/workflows/deploy-pages.yml` — GitHub Pages デプロイの CI 定義
+- [`docs/cost.md`](./docs/cost.md) — 運用コスト見積
+- [`docs/m2a-verification.md`](./docs/m2a-verification.md) — M2-A 実機検証メモ
 - `sample/` — 入力 MP4 と目標出力 GIF のペア（**リポジトリ未管理。下記参照**）
 
 ## 主な制約
 
 | 項目 | 内容 |
 |---|---|
-| アップロード上限 | 500 MB（1 ファイル） |
+| 入力サイズの推奨上限 | 500 MB（超過時は警告ダイアログを表示し、了承で続行可能。ハード上限は設けない） |
 | 対応入力形式 | `.mp4`, `.mov`, `.avi`, `.mkv`, `.webm`, `.wmv`, `.flv`, `.m4v`, `.ts`, `.3gp` |
 | 出力形式 | モノクロのアニメーション GIF |
-| 同時処理 | 1 リクエストあたり 1 ファイル |
-| 保持ポリシー | ダウンロード完了時、またはアップロードから 30 分経過時のいずれか早い方で削除 |
+| 1 操作あたり | 1 ファイル（バッチ処理は行わない） |
+| 出力サイズ警告 | 推定 200 MB 超で警告ダイアログ（推定式：`W*H*fps*duration*0.30`） |
+| 保持ポリシー | サーバを持たないため自動削除処理は不要。ファイルはブラウザのメモリ上にのみ存在し、タブクローズ等で自動消滅 |
 
 詳細は [`project.md`](./project.md) を参照してください。
 
@@ -42,8 +66,39 @@
 
 ## 開発を始めるには
 
-技術スタック未確定のため、ビルド／テスト／lint コマンドはまだ存在しません。
-スタック決定後に本セクションを更新します。
+### 前提
+
+- Node.js 24 LTS（[Volta](https://volta.sh/) 推奨。`package.json` の `volta`
+  フィールドで pin 済み）
+- Windows 11 / macOS / Linux のいずれか
+
+### セットアップ
+
+```bash
+npm ci
+```
+
+`predev` / `prebuild` / `prepreview` で `scripts/copy-ffmpeg-core.mjs` が
+走り、`node_modules/@ffmpeg/{core,core-mt}/dist/esm` を `public/ffmpeg/` に
+コピーします（self-host）。
+
+### よく使うコマンド
+
+| コマンド | 用途 |
+|---|---|
+| `npm run dev` | Vite 開発サーバを起動（COOP/COEP 付与済 → mt 版も使用可） |
+| `npm run build` | 本番ビルド（`tsc -b && vite build`） |
+| `npm run preview` | `dist/` を `vite preview` で配信して動作確認 |
+| `npm run typecheck` | 型チェックのみ（`tsc -b --noEmit`） |
+| `N=10 npm run m2b:harness` | 10,000 件ローカル自動化ハーネスを N 件で実行（M2-B） |
+| `FFMPEG_ST_ONLY=1 npm run build` | core-mt を除外したステージング相当ビルド |
+
+### ffmpeg.wasm のスレッドモード
+
+- 既定は **st 版**（`src/ffmpeg/threading.ts`：core-mt は GIF エンコードで
+  ハングするため st 既定）
+- `?ff=mt` クエリで mt 版を強制（`crossOriginIsolated` 必須なので dev /
+  preview / 本番 XServer のみ）
 
 ## ステージング配信（GitHub Pages）
 
