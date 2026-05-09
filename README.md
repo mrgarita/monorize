@@ -13,7 +13,7 @@
 - **変換エンジン**：[ffmpeg.wasm](https://ffmpegwasm.netlify.app/) 0.12 系
   （`public/ffmpeg/` に self-host）
 - **ステージング**：GitHub Pages（st 版） — 公開中
-- **本番**：XServer（st 版） — CI 整備済、初回デプロイは Secrets 登録待ち
+- **本番**：XServer（st 版） — `https://dianxnao.com/monorize/`
 
 | マイルストーン | 状態 |
 |---|---|
@@ -22,7 +22,7 @@
 | M2-A `sample/` 6 本の実機検証 | ✅ |
 | M2-B 10,000 件のローカル自動化 | ✅ |
 | M3-B GitHub Pages ステージング | ✅ |
-| M3-A XServer 本番デプロイ | 🟨 ワークフロー実装済、初回デプロイは Secrets 登録後 |
+| M3-A XServer 本番デプロイ | ✅ |
 
 ## 主要ファイル
 
@@ -134,7 +134,7 @@ core-mt は GIF エンコードでハングするため st 既定）なので、
 （`workflow_dispatch`）で本番にデプロイされます。
 **main の push では本番に反映されません**（事故防止）。
 
-- **公開 URL**：既存ドメインの `/monorize/` 配下
+- **公開 URL**：`https://dianxnao.com/monorize/`
 - **ワークフロー**：[`.github/workflows/deploy-xserver.yml`](./.github/workflows/deploy-xserver.yml)
 - **配信内容**：ステージングと同じく **st 版のみ**（`FFMPEG_ST_ONLY=1`）。
   プラン A — `core-mt` は GIF コーデックでハングする既知問題があり
@@ -157,9 +157,12 @@ XServer の配置先ディレクトリに同期します。
 XServer 側:
 
 1. **SSH を有効化**：XServer サーバパネル → 「SSH 設定」→ ON
-2. **公開鍵を登録**：ローカルで `ssh-keygen -t ed25519 -f xserver_deploy`
+2. **SSH アクセス制限を OFF にする**：サーバパネル → SSH → アクセス制限。
+   GitHub Actions runner の IP は毎回変わるため、IP 制限が ON だと
+   `Connection closed by ... port 10022` で deploy が落ちる
+3. **公開鍵を登録**：ローカルで `ssh-keygen -t ed25519 -f xserver_deploy`
    を発行し、公開鍵 (`xserver_deploy.pub`) を XServer に登録
-3. **配置先ディレクトリ作成**：
+4. **配置先ディレクトリ作成**：
    `/home/<XServerユーザID>/<ドメイン>/public_html/monorize/`
 
 GitHub 側（リポジトリ Settings → Secrets and variables → Actions）:
