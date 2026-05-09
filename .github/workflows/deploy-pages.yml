@@ -1,0 +1,55 @@
+# GitHub Pages ステージングデプロイ。
+# main への push、または手動 (workflow_dispatch) でビルド→Pages へ公開する。
+# COOP/COEP は GitHub Pages では付与できないため ffmpeg.wasm は st 版のみを配信する
+# (FFMPEG_ST_ONLY=1 で core-mt を dist に含めない)。
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一 ref で複数回トリガーされた場合は最新のみを残し、進行中ジョブはキャンセルする。
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (st-only)
+        env:
+          FFMPEG_ST_ONLY: '1'
+        run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
