@@ -44,3 +44,30 @@
 
 技術スタック未確定のため、ビルド／テスト／lint コマンドはまだ存在しません。
 スタック決定後に本セクションを更新します。
+
+## ステージング配信（GitHub Pages）
+
+`main` ブランチへの push、または GitHub Actions の手動実行
+（`workflow_dispatch`）でステージング環境にデプロイされます。
+
+- **公開 URL**: `https://mrgarita.github.io/monorize/`
+- **ワークフロー**: [`.github/workflows/deploy-pages.yml`](./.github/workflows/deploy-pages.yml)
+
+### 本番（XServer）との差異
+
+GitHub Pages では COOP/COEP ヘッダを設定できないため
+`crossOriginIsolated` が成立せず、ffmpeg.wasm の **マルチスレッド版
+（core-mt）が使えません**。ステージングビルドは `FFMPEG_ST_ONLY=1` を渡し、
+シングルスレッド版（core）のみを `dist/ffmpeg/` に同梱します
+（`scripts/copy-ffmpeg-core.mjs`）。
+
+なお、現状はアプリ側の既定がそもそも st 版（`src/ffmpeg/threading.ts`：
+core-mt は GIF エンコードでハングするため st 既定）なので、Pages 環境でも
+通常動作には影響しません。
+
+### 初回セットアップ（リポジトリ管理者）
+
+1. リポジトリ Settings → Pages → **Source = "GitHub Actions"** を選択
+2. リポジトリを Public 化（無料プランで Pages を使う場合）
+3. `main` への push、もしくは Actions タブから "Deploy to GitHub Pages" を
+   手動実行
