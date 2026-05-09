@@ -13,7 +13,7 @@
 - **変換エンジン**：[ffmpeg.wasm](https://ffmpegwasm.netlify.app/) 0.12 系
   （`public/ffmpeg/` に self-host）
 - **ステージング**：GitHub Pages（st 版） — 公開中
-- **本番**：XServer（mt 版予定） — 未着手
+- **本番**：XServer（st 版） — CI 整備済、初回デプロイは Secrets 登録待ち
 
 | マイルストーン | 状態 |
 |---|---|
@@ -22,7 +22,7 @@
 | M2-A `sample/` 6 本の実機検証 | ✅ |
 | M2-B 10,000 件のローカル自動化 | ✅ |
 | M3-B GitHub Pages ステージング | ✅ |
-| M3-A XServer 本番デプロイ | ⬜ |
+| M3-A XServer 本番デプロイ | 🟨 ワークフロー実装済、初回デプロイは Secrets 登録後 |
 
 ## 主要ファイル
 
@@ -34,6 +34,7 @@
 - `scripts/` — `copy-ffmpeg-core.mjs`（self-host コピー）と `m2b/`（10,000 件
   ローカル自動化ハーネス）
 - `.github/workflows/deploy-pages.yml` — GitHub Pages デプロイの CI 定義
+- `.github/workflows/deploy-xserver.yml` — XServer 本番デプロイの CI 定義
 - [`docs/cost.md`](./docs/cost.md) — 運用コスト見積
 - [`docs/m2a-verification.md`](./docs/m2a-verification.md) — M2-A 実機検証メモ
 - `sample/` — 入力 MP4 と目標出力 GIF のペア（**リポジトリ未管理。下記参照**）
@@ -126,3 +127,51 @@ core-mt は GIF エンコードでハングするため st 既定）なので、
 2. リポジトリを Public 化（無料プランで Pages を使う場合）
 3. `main` への push、もしくは Actions タブから "Deploy to GitHub Pages" を
    手動実行
+
+## 本番配信（XServer）
+
+`v*` 形式のタグ push、または GitHub Actions の手動実行
+（`workflow_dispatch`）で本番にデプロイされます。
+**main の push では本番に反映されません**（事故防止）。
+
+- **公開 URL**：既存ドメインの `/monorize/` 配下
+- **ワークフロー**：[`.github/workflows/deploy-xserver.yml`](./.github/workflows/deploy-xserver.yml)
+- **配信内容**：ステージングと同じく **st 版のみ**（`FFMPEG_ST_ONLY=1`）。
+  プラン A — `core-mt` は GIF コーデックでハングする既知問題があり
+  （`docs/m2a-verification.md`）、本番でも mt 版を配信せず `.htaccess` の
+  COOP/COEP も設定不要
+
+### リリース手順（コード上の作業のみ）
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+`v` で始まるタグの push を Actions が拾い、`npm ci` → `npm run build`
+（FFMPEG_ST_ONLY=1）→ `rsync -avz --delete -e "ssh -p 10022"` で
+XServer の配置先ディレクトリに同期します。
+
+### 初回セットアップ（リポジトリ管理者）
+
+XServer 側:
+
+1. **SSH を有効化**：XServer サーバパネル → 「SSH 設定」→ ON
+2. **公開鍵を登録**：ローカルで `ssh-keygen -t ed25519 -f xserver_deploy`
+   を発行し、公開鍵 (`xserver_deploy.pub`) を XServer に登録
+3. **配置先ディレクトリ作成**：
+   `/home/<XServerユーザID>/<ドメイン>/public_html/monorize/`
+
+GitHub 側（リポジトリ Settings → Secrets and variables → Actions）:
+
+| Secret 名 | 内容 |
+|---|---|
+| `XSERVER_SSH_KEY` | 秘密鍵 (`xserver_deploy`) のファイル全文 |
+| `XSERVER_KNOWN_HOSTS` | `ssh-keyscan -p 10022 <XSERVER_HOST>` の出力 |
+| `XSERVER_HOST` | 例 `sv1234.xserver.jp` |
+| `XSERVER_USER` | XServer のサーバ ID |
+| `XSERVER_REMOTE_PATH` | 例 `/home/<ID>/<ドメイン>/public_html/monorize/`（**末尾スラッシュ必須**） |
+
+`environment: xserver-production` を設定済みなので、Settings →
+Environments で同名環境を作っておくと「本番デプロイ前に承認」を挟む
+レビュー運用も可能です（任意）。
