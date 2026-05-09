@@ -1,0 +1,58 @@
+# XServer 本番デプロイ。
+# v* 形式のタグ push、または手動 (workflow_dispatch) でビルドして
+# rsync over SSH で XServer の既存ドメイン配下 (/monorize/) に配置する。
+#
+# プラン A: GIF コーデックでハングする core-mt は本番でも配信しない
+# (FFMPEG_ST_ONLY=1)。Pages と同じく st 版のみを公開する。
+# 将来 mt 版で GIF が動くようになった場合は本ファイルと
+# scripts/copy-ffmpeg-core.mjs / .htaccess を見直す。
+name: Deploy to XServer
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+# 同一 ref で重複起動した場合は新しい方を優先し古いジョブはキャンセルする。
+concurrency:
+  group: xserver-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: xserver-production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (st-only)
+        env:
+          FFMPEG_ST_ONLY: '1'
+        run: npm run build
+
+      - name: Setup SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.XSERVER_SSH_KEY }}
+          known_hosts: ${{ secrets.XSERVER_KNOWN_HOSTS }}
+
+      # XServer の SSH ポートは 22 ではなく 10022。
+      # --delete でリモートに残った旧ファイルを掃除し dist と同期する。
+      - name: Rsync dist to XServer
+        run: |
+          rsync -avz --delete \
+            -e "ssh -p 10022" \
+            dist/ "${XSERVER_USER}@${XSERVER_HOST}:${XSERVER_REMOTE_PATH}"
+        env:
+          XSERVER_USER: ${{ secrets.XSERVER_USER }}
+          XSERVER_HOST: ${{ secrets.XSERVER_HOST }}
+          XSERVER_REMOTE_PATH: ${{ secrets.XSERVER_REMOTE_PATH }}
