@@ -7,7 +7,12 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
 
-const sources = [
+// FFMPEG_ST_ONLY=1 のとき core-mt のコピーをスキップして既存ディレクトリも削除する。
+// GitHub Pages デプロイは COOP/COEP を設定できず crossOriginIsolated にならないため
+// mt 版は使えず、配信容量を抑える目的で CI 側でこの環境変数を渡す。
+const stOnly = process.env.FFMPEG_ST_ONLY === '1';
+
+const allSources = [
   {
     label: 'core (single-thread)',
     from: join(repoRoot, 'node_modules/@ffmpeg/core/dist/esm'),
@@ -21,6 +26,14 @@ const sources = [
     files: ['ffmpeg-core.js', 'ffmpeg-core.wasm', 'ffmpeg-core.worker.js'],
   },
 ];
+
+const sources = stOnly ? allSources.filter((src) => !src.to.endsWith('core-mt')) : allSources;
+
+if (stOnly) {
+  const mtDir = join(repoRoot, 'public/ffmpeg/core-mt');
+  await rm(mtDir, { recursive: true, force: true });
+  console.log(`[copy-ffmpeg-core] FFMPEG_ST_ONLY=1: core-mt を除外し ${mtDir} を削除しました`);
+}
 
 for (const src of sources) {
   if (!existsSync(src.from)) {
