@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent } from 'react';
 import { FPS_MAX, FPS_MIN, SCALE_MIN_PX } from '../lib/constants';
 import type { VideoMeta } from '../lib/videoMeta';
+import { NumericInput } from './NumericInput';
 
 export interface ConvertParams {
   width: number;
@@ -188,14 +189,14 @@ export function ParameterPanel({ meta, value, onChange, disabled, advanced }: Pr
           disabled={disabled}
           aria-label={effectiveUnit === 'px' ? '横幅 (px)' : '横幅 (%)'}
         />
-        <input
-          type="number"
+        <NumericInput
+          value={widthDisplay}
           min={widthMin}
           max={widthMaxDisplay}
           step={widthStep}
-          value={widthDisplay}
-          onChange={onWidthInput}
+          onCommit={handleWidthChange}
           disabled={disabled}
+          ariaLabel={effectiveUnit === 'px' ? '横幅 (px)' : '横幅 (%)'}
         />
       </div>
 
@@ -218,14 +219,14 @@ export function ParameterPanel({ meta, value, onChange, disabled, advanced }: Pr
             disabled={disabled}
             aria-label={effectiveUnit === 'px' ? '縦幅 (px)' : '縦幅 (%)'}
           />
-          <input
-            type="number"
+          <NumericInput
+            value={heightDisplay}
             min={heightMin}
             max={heightMaxDisplay}
             step={heightStep}
-            value={heightDisplay}
-            onChange={onHeightInput}
+            onCommit={handleHeightChange}
             disabled={disabled}
+            ariaLabel={effectiveUnit === 'px' ? '縦幅 (px)' : '縦幅 (%)'}
           />
           <p className="muted small">
             実効サイズ: {value.width} × {value.height} px
@@ -251,13 +252,13 @@ export function ParameterPanel({ meta, value, onChange, disabled, advanced }: Pr
           disabled={disabled}
           aria-label="フレームレート (fps)"
         />
-        <input
-          type="number"
+        <NumericInput
+          value={value.fps}
           min={FPS_MIN}
           max={FPS_MAX}
-          value={value.fps}
-          onChange={onFpsInput}
+          onCommit={updateFps}
           disabled={disabled}
+          ariaLabel="フレームレート (fps)"
         />
       </div>
     </section>
