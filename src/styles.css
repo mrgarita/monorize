@@ -95,6 +95,9 @@ header p {
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.4rem;
+  /* iPhone でスライダーつまみが画面端ギリギリに来てタップ判定が外れる
+     のを防ぐため、フィールド両端に余白を確保する。 */
+  padding-inline: 0.5rem;
 }
 
 .parameter-panel .panel-controls {
@@ -136,10 +139,24 @@ header p {
 
 .parameter-panel input[type='range'] {
   width: 100%;
+  /* 水平方向のタッチをスライダー操作に専有させ、iOS の弾性スクロールに
+     ジェスチャを奪われないようにする。垂直スクロールは維持。 */
+  touch-action: pan-y;
 }
 
-.parameter-panel input[type='number'] {
+.parameter-panel input[type='number'],
+.parameter-panel input.numeric-input {
   width: 8rem;
+  /* iOS Safari は font-size 16px 未満の input でフォーカス時に自動ズーム
+     する。16px 以上を明示してそれを抑制する。 */
+  font-size: 16px;
+}
+
+.numeric-input__notice {
+  /* 補正通知はエラーではなく自動調整の知らせなので、アクセント色で目立たせる。
+     既存の .muted は実効サイズ表示と共用しており視認性が足りなかった。 */
+  color: var(--color-accent);
+  margin: 0.15rem 0 0;
 }
 
 .actions {

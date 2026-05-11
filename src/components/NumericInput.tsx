@@ -108,11 +108,16 @@ export function NumericInput({
     <>
       <input
         id={id}
-        type="number"
+        // type="number" だと Android Chrome が inputMode を無視して小数点付き
+        // キーボードを出す。type="text" + inputMode="numeric" + pattern で
+        // iOS/Android 双方で安定して整数テンキーを出す。
+        type="text"
         inputMode="numeric"
-        min={min}
-        max={max}
-        step={step}
+        pattern="[0-9]*"
+        autoComplete="off"
+        className="numeric-input"
+        aria-valuemin={min}
+        aria-valuemax={max}
         value={text}
         onFocus={handleFocus}
         onChange={handleChange}
@@ -122,7 +127,7 @@ export function NumericInput({
         aria-label={ariaLabel}
       />
       {notice && (
-        <p className="muted small" role="status" aria-live="polite">
+        <p className="numeric-input__notice small" role="status" aria-live="polite">
           {notice}
         </p>
       )}
