@@ -109,12 +109,10 @@ export function NumericInput({
       <input
         id={id}
         // type="number" だと Android Chrome が inputMode を無視して小数点付き
-        // キーボードを出す。type="text" + inputMode="tel" + pattern で
-        // iOS/Android 双方で「.」を含まないテンキーを安定して出す。
-        // （inputMode="numeric" は Gboard が「.」「-」を混ぜたレイアウトを
-        // 出してしまうため、整数のみ入力したい欄では tel を使うのが定石）
+        // キーボードを出す。type="text" + inputMode="numeric" + pattern で
+        // iOS/Android 双方で安定して整数テンキーを出す。
         type="text"
-        inputMode="tel"
+        inputMode="numeric"
         pattern="[0-9]*"
         autoComplete="off"
         className="numeric-input"
