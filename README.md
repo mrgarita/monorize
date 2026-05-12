@@ -149,8 +149,10 @@ git push origin v0.1.0
 ```
 
 `v` で始まるタグの push を Actions が拾い、`npm ci` → `npm run build`
-（FFMPEG_ST_ONLY=1）→ `rsync -avz --delete -e "ssh -p 10022"` で
-XServer の配置先ディレクトリに同期します。
+（FFMPEG_ST_ONLY=1）→ `rsync -avz --delete -e "ssh -p 10022" dist/ <USER>@<HOST>:.`
+で XServer の配置先ディレクトリ（サーバ側 rrsync SUBDIR）に同期します。
+**destination が `:.` なのは rrsync が path を SUBDIR からの相対として
+扱うため**（絶対パスを渡すと path が二重結合されて mkdir に失敗する）。
 
 ### 初回セットアップ（リポジトリ管理者）
 
@@ -189,7 +191,7 @@ GitHub 側（リポジトリ Settings → Secrets and variables → Actions）:
 | `XSERVER_KNOWN_HOSTS` | `ssh-keyscan -p 10022 <XSERVER_HOST>` の出力 |
 | `XSERVER_HOST` | 例 `sv1234.xserver.jp` |
 | `XSERVER_USER` | XServer のサーバ ID |
-| `XSERVER_REMOTE_PATH` | 例 `/home/<ID>/<ドメイン>/public_html/monorize/`（**末尾スラッシュ必須**） |
+| `XSERVER_REMOTE_PATH` | サーバ側 rrsync SUBDIR と一致させるべき配置先パスの参考値（例 `/home/<ID>/<ドメイン>/public_html/monorize/`）。**workflow からは現在参照していない**（rrsync が destination を SUBDIR 固定するため）。手元での運用メモとして残してあり、不要なら削除可 |
 
 `environment: xserver-production` を設定済みなので、Settings →
 Environments で同名環境を作っておくと「本番デプロイ前に承認」を挟む
