@@ -164,6 +164,22 @@ XServer 側:
    を発行し、公開鍵 (`xserver_deploy.pub`) を XServer に登録
 4. **配置先ディレクトリ作成**：
    `/home/<XServerユーザID>/<ドメイン>/public_html/monorize/`
+5. **専用鍵化（推奨・被害局所化）**：登録した鍵を rsync 1 用途・
+   1 ディレクトリ専用に縛る。`~/.ssh/authorized_keys` の該当鍵行の
+   **先頭** に以下を付与（1 鍵 = 1 行、改行禁止）:
+
+   ```
+   command="rrsync -wo /home/<ID>/<ドメイン>/public_html/monorize/",no-pty,no-port-forwarding,no-X11-forwarding,no-agent-forwarding,restrict
+   ```
+
+   `rrsync` は OpenSSH/rsync 公式同梱の Perl 製ラッパー。XServer 上で
+   `which rrsync || ls /usr/share/doc/rsync*/scripts/rrsync*` で在処を
+   確認し、`command=` 内のパスに合わせる。未配備なら rsync ソース付属の
+   `scripts/rrsync` を `~/bin/rrsync` に置いて `chmod +x` でも可。
+
+   これを設定すると、鍵が万一漏洩しても攻撃者は **monorize 配信
+   ディレクトリへの rsync 書き込みしかできなくなる**（shell 取得・
+   ポート転送・他ディレクトリ書き込み全て遮断）。
 
 GitHub 側（リポジトリ Settings → Secrets and variables → Actions）:
 

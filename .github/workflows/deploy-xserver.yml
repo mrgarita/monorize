@@ -47,6 +47,9 @@ jobs:
 
       # XServer の SSH ポートは 22 ではなく 10022。
       # --delete でリモートに残った旧ファイルを掃除し dist と同期する。
+      # サーバ側は authorized_keys の command= で rrsync -wo を強制し
+      # 書き込み先パスを固定している (鍵漏洩時の被害局所化)。
+      # rsync のオプションを変える際は rrsync が許容するか確認のこと。
       - name: Rsync dist to XServer
         run: |
           rsync -avz --delete \
