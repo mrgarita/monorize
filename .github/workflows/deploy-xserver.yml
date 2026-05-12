@@ -45,6 +45,20 @@ jobs:
           key: ${{ secrets.XSERVER_SSH_KEY }}
           known_hosts: ${{ secrets.XSERVER_KNOWN_HOSTS }}
 
+      # TODO(revert): 診断用一時ステップ。原因特定後に削除すること。
+      - name: DEBUG - SSH key fingerprint + file shape
+        run: |
+          echo "== id_rsa fingerprint =="
+          ssh-keygen -l -f ~/.ssh/id_rsa || true
+          echo "== id_rsa file size & line count =="
+          wc -c ~/.ssh/id_rsa
+          wc -l ~/.ssh/id_rsa
+          echo "== id_rsa first/last byte (hex) =="
+          xxd ~/.ssh/id_rsa | head -1
+          xxd ~/.ssh/id_rsa | tail -1
+          echo "== known_hosts size =="
+          wc -l ~/.ssh/known_hosts
+
       # XServer の SSH ポートは 22 ではなく 10022。
       # --delete でリモートに残った旧ファイルを掃除し dist と同期する。
       # サーバ側は authorized_keys の command= で rrsync -wo を強制し
@@ -53,7 +67,7 @@ jobs:
       - name: Rsync dist to XServer
         run: |
           rsync -avz --delete \
-            -e "ssh -p 10022" \
+            -e "ssh -vvv -p 10022" \
             dist/ "${XSERVER_USER}@${XSERVER_HOST}:${XSERVER_REMOTE_PATH}"
         env:
           XSERVER_USER: ${{ secrets.XSERVER_USER }}
