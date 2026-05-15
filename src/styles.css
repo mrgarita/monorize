@@ -6,6 +6,7 @@
   --color-accent: #2563eb;
   --color-error: #dc2626;
   --color-muted: rgba(127, 127, 127, 0.85);
+  --color-warning: #d97706;
 }
 
 body {
@@ -88,6 +89,12 @@ header p {
 
 .dropzone button {
   margin-top: 0.5rem;
+}
+
+.dropzone__notice {
+  color: var(--color-warning);
+  margin-top: 0.5rem;
+  font-size: 0.85em;
 }
 
 .parameter-panel .field {
