@@ -67,6 +67,10 @@ export function DropZone({ onFile }: Props) {
       <p className="muted small">
         対応形式: {ACCEPTED_EXTENSIONS.join(', ')}
       </p>
+      <p className="muted small">
+        スマホなど RAM の少ない端末では、長尺・高解像度の動画でタブが強制再読み込み
+        される場合があります。まずは数十秒程度の短めの動画でお試しください。
+      </p>
       {error && <p role="alert" className="error">{error}</p>}
     </section>
   );
