@@ -45,34 +45,70 @@ export function DropZone({ onFile }: Props) {
   };
 
   return (
-    <section
-      className={`dropzone ${isOver ? 'is-over' : ''}`}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-      aria-label="動画ファイルのドロップ領域"
-    >
-      <p>動画ファイルをここにドラッグ&amp;ドロップ</p>
-      <p className="muted">または</p>
-      <button type="button" onClick={() => inputRef.current?.click()}>
-        ファイルを選択
-      </button>
-      <input
-        ref={inputRef}
-        type="file"
-        accept={ACCEPTED_ACCEPT_ATTR}
-        hidden
-        onChange={onInputChange}
-      />
-      <p className="muted small">
-        対応形式: {ACCEPTED_EXTENSIONS.join(', ')}
-      </p>
-      <p className="dropzone__notice">
-        スマホなど RAM の少ない端末では、長尺・高解像度の動画でタブが強制再読み込みされる場合があります。
-        <br />
-        まずは数十秒程度の短めの動画でお試しください。
-      </p>
-      {error && <p role="alert" className="error">{error}</p>}
-    </section>
+    <div className="panel">
+      <div
+        className={`drop ${isOver ? 'over' : ''}`}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        aria-label="動画ファイルのドロップ領域"
+      >
+        <div className="drop-icon" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 16V4M12 4l-4 4M12 4l4 4" />
+            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+          </svg>
+        </div>
+        <div>
+          <p className="drop-title">動画ファイルをドロップ</p>
+          <p className="drop-sub">または、下のボタンから選択してください。</p>
+        </div>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => inputRef.current?.click()}
+        >
+          ファイルを選択
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ACCEPTED_ACCEPT_ATTR}
+          hidden
+          onChange={onInputChange}
+        />
+        <p className="drop-formats">{ACCEPTED_EXTENSIONS.join('  ·  ')}</p>
+
+        <div className="drop-warn">
+          <svg
+            className="ico"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 8v5M12 16h.01" />
+          </svg>
+          <span>
+            スマホなど RAM の少ない端末では、長尺・高解像度の動画でタブが強制再読み込みされる場合があります。まずは数十秒程度の短めの動画でお試しください。
+          </span>
+        </div>
+
+        {error && (
+          <p role="alert" className="drop-error">
+            {error}
+          </p>
+        )}
+      </div>
+    </div>
   );
 }

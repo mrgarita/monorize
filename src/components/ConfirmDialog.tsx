@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, type MouseEvent, type ReactNode } from 'react';
 
 export interface ConfirmDialogProps {
   open: boolean;
@@ -8,7 +8,6 @@ export interface ConfirmDialogProps {
   cancelLabel: string;
   onConfirm: () => void;
   onCancel: () => void;
-  severity?: 'warning';
 }
 
 export function ConfirmDialog({
@@ -19,57 +18,65 @@ export function ConfirmDialog({
   cancelLabel,
   onConfirm,
   onCancel,
-  severity,
 }: ConfirmDialogProps) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const titleId = useId();
-
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (open && !el.open) el.showModal();
-    if (!open && el.open) el.close();
-  }, [open]);
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, onCancel]);
 
-  const onCancelEvent = (e: Event) => {
-    // Esc キーが押されたとき <dialog> は cancel イベントを発火する
-    e.preventDefault();
-    onCancel();
-  };
+  if (!open) return null;
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    el.addEventListener('cancel', onCancelEvent);
-    return () => el.removeEventListener('cancel', onCancelEvent);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onCancel]);
-
-  const onBackdropClick = (e: MouseEvent<HTMLDialogElement>) => {
+  const onBackdropClick = (e: MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onCancel();
   };
 
   return (
-    <dialog
-      ref={ref}
-      className={`confirm-dialog${severity === 'warning' ? ' is-warning' : ''}`}
-      aria-labelledby={titleId}
+    <div
+      className="dlg-back"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
       onClick={onBackdropClick}
     >
-      <div className="confirm-dialog__body">
-        <h2 id={titleId} className="confirm-dialog__title">
-          {title}
-        </h2>
-        <div className="confirm-dialog__message">{message}</div>
-        <div className="confirm-dialog__actions">
-          <button type="button" onClick={onCancel}>
+      <div className="dlg">
+        <div className="dlg-body">
+          <div className="dlg-icon" aria-hidden="true">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M12 9v4M12 17h.01" />
+              <path d="M10.3 3.86l-8.07 14a2 2 0 0 0 1.74 3h16.14a2 2 0 0 0 1.74-3l-8.07-14a2 2 0 0 0-3.48 0z" />
+            </svg>
+          </div>
+          <h3 className="dlg-title">{title}</h3>
+          <div className="dlg-msg">{message}</div>
+        </div>
+        <div className="dlg-actions">
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={onCancel}
+          >
             {cancelLabel}
           </button>
-          <button type="button" className="primary" onClick={onConfirm}>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={onConfirm}
+          >
             {confirmLabel}
           </button>
         </div>
       </div>
-    </dialog>
+    </div>
   );
 }

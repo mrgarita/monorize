@@ -15,6 +15,7 @@ interface Props {
   disabled?: boolean;
   ariaLabel?: string;
   id?: string;
+  unit?: string;
 }
 
 const NOTICE_DURATION_MS = 2500;
@@ -28,6 +29,7 @@ export function NumericInput({
   disabled,
   ariaLabel,
   id,
+  unit,
 }: Props) {
   const [text, setText] = useState(() => String(value));
   const [editing, setEditing] = useState(false);
@@ -35,7 +37,6 @@ export function NumericInput({
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // フォーカス外のとき、外部から value が変わったら表示を同期する。
-  // 編集中は上書きせず、入力途中の値を保持させる。
   useEffect(() => {
     if (!editing) setText(String(value));
   }, [value, editing]);
@@ -62,16 +63,22 @@ export function NumericInput({
 
   const commit = () => {
     setEditing(false);
-    if (text.trim() === '') return;
+    if (text.trim() === '') {
+      setText(String(value));
+      return;
+    }
     const parsed = Number(text);
-    if (Number.isNaN(parsed)) return;
+    if (!Number.isFinite(parsed)) {
+      setText(String(value));
+      return;
+    }
 
     const rounded = Math.round(parsed);
     const clamped = Math.max(min, Math.min(max, rounded));
     let aligned = step > 0 ? min + Math.round((clamped - min) / step) * step : clamped;
-    // step 揃えで max を超える可能性（max が step 境界に乗らない場合）に備えて
-    // 直近の境界へ落とす
-    if (aligned > max) aligned = min + Math.floor((max - min) / Math.max(step, 1)) * Math.max(step, 1);
+    if (aligned > max) {
+      aligned = min + Math.floor((max - min) / Math.max(step, 1)) * Math.max(step, 1);
+    }
     if (aligned < min) aligned = min;
 
     if (aligned !== parsed) {
@@ -86,14 +93,15 @@ export function NumericInput({
 
     if (aligned !== value) {
       onCommit(aligned);
+    } else {
+      setText(String(aligned));
     }
-    // value が変わらない場合でも、useEffect が editing 変化を検知して
-    // text を String(value) に整形し直す（"32.0" → "32" 等）。
   };
 
-  const handleFocus = () => {
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     setEditing(true);
     clearNotice();
+    e.target.select();
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -101,36 +109,52 @@ export function NumericInput({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') e.currentTarget.blur();
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    } else if (e.key === 'Escape') {
+      setText(String(value));
+      setEditing(false);
+      e.currentTarget.blur();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      onCommit(Math.max(min, Math.min(max, value + step)));
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      onCommit(Math.max(min, Math.min(max, value - step)));
+    }
   };
 
+  const width = `${Math.max(2, String(text || '').length)}ch`;
+
   return (
-    <>
-      <input
-        id={id}
-        // type="number" だと Android Chrome が inputMode を無視して小数点付き
-        // キーボードを出す。type="text" + inputMode="numeric" + pattern で
-        // iOS/Android 双方で安定して整数テンキーを出す。
-        type="text"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        autoComplete="off"
-        className="numeric-input"
-        aria-valuemin={min}
-        aria-valuemax={max}
-        value={text}
-        onFocus={handleFocus}
-        onChange={handleChange}
-        onBlur={commit}
-        onKeyDown={handleKeyDown}
-        disabled={disabled}
-        aria-label={ariaLabel}
-      />
-      {notice && (
-        <p className="numeric-input__notice small" role="status" aria-live="polite">
-          {notice}
-        </p>
-      )}
-    </>
+    <div className="num-wrap">
+      <span className="num">
+        <input
+          id={id}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete="off"
+          aria-valuemin={min}
+          aria-valuemax={max}
+          value={text}
+          style={{ width }}
+          onFocus={handleFocus}
+          onChange={handleChange}
+          onBlur={commit}
+          onKeyDown={handleKeyDown}
+          disabled={disabled}
+          aria-label={ariaLabel}
+        />
+        {unit && <span className="u">{unit}</span>}
+      </span>
+      <p
+        className={`num-notice ${notice ? 'show' : ''}`}
+        role="status"
+        aria-live="polite"
+      >
+        {notice || ' '}
+      </p>
+    </div>
   );
 }
