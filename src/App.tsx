@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ConfirmDialog } from './components/ConfirmDialog';
-import { DownloadButton } from './components/DownloadButton';
+import { ConvertingView } from './components/ConvertingView';
+import { DoneView } from './components/DoneView';
 import { DropZone } from './components/DropZone';
-import { ModeToggle } from './components/ModeToggle';
+import { ErrorView } from './components/ErrorView';
+import { Footer } from './components/Footer';
+import { Headline } from './components/Headline';
 import { ParameterPanel, type ConvertParams } from './components/ParameterPanel';
-import { ProgressBar } from './components/ProgressBar';
+import { TopBar } from './components/TopBar';
 import { convertToMonochromeGif } from './ffmpeg/convert';
 import { loadFFmpeg, type FFmpegInstance } from './ffmpeg/client';
 import { INPUT_WARN_BYTES, OUTPUT_WARN_BYTES } from './lib/constants';
@@ -31,8 +34,14 @@ type AppState =
   | { kind: 'idle' }
   | { kind: 'params'; file: File; meta: VideoMeta }
   | { kind: 'preparing'; file: File; meta: VideoMeta; params: ConvertParams }
-  | { kind: 'converting'; file: File; meta: VideoMeta; params: ConvertParams; progress: number }
-  | { kind: 'done'; file: File; blob: Blob }
+  | {
+      kind: 'converting';
+      file: File;
+      meta: VideoMeta;
+      params: ConvertParams;
+      progress: number;
+    }
+  | { kind: 'done'; file: File; params: ConvertParams; blob: Blob }
   | { kind: 'error'; message: string };
 
 export function App() {
@@ -93,7 +102,7 @@ export function App() {
           height: currentParams.height,
           fps: currentParams.fps,
         });
-        setState({ kind: 'done', file, blob });
+        setState({ kind: 'done', file, params: currentParams, blob });
       } catch (e) {
         setState({ kind: 'error', message: errorMessage(e) });
       }
@@ -126,80 +135,55 @@ export function App() {
   }, []);
 
   return (
-    <main>
-      <header>
-        <div className="header-row">
-          <h1>Monorize</h1>
-          <ModeToggle value={mode} onChange={setMode} />
+    <div className="shell">
+      <TopBar mode={mode} onModeChange={setMode} />
+
+      <main className="stage">
+        <div className="card">
+          {state.kind === 'idle' && <Headline />}
+
+          {state.kind === 'idle' && <DropZone onFile={handleFile} />}
+
+          {state.kind === 'params' && (
+            <ParameterPanel
+              file={state.file}
+              meta={state.meta}
+              value={params}
+              onChange={setParams}
+              advanced={mode === 'advanced'}
+              onConvert={startConvert}
+              onCancel={reset}
+            />
+          )}
+
+          {state.kind === 'preparing' && (
+            <ConvertingView
+              progress={0}
+              filename={state.file.name}
+              sublabel="ffmpeg.wasm を読み込み中…"
+            />
+          )}
+
+          {state.kind === 'converting' && (
+            <ConvertingView progress={state.progress} filename={state.file.name} />
+          )}
+
+          {state.kind === 'done' && (
+            <DoneView
+              file={state.file}
+              blob={state.blob}
+              params={state.params}
+              onReset={reset}
+            />
+          )}
+
+          {state.kind === 'error' && (
+            <ErrorView message={state.message} onReset={reset} />
+          )}
         </div>
-        <p>動画をブラウザ内でモノクロのアニメーション GIF に変換します。動画はサーバへ送信されません。</p>
-      </header>
+      </main>
 
-      {state.kind === 'idle' && <DropZone onFile={handleFile} />}
-
-      {state.kind === 'params' && (
-        <>
-          <p>
-            選択中: <strong>{state.file.name}</strong>（{formatBytes(state.file.size)}・
-            {state.meta.width}×{state.meta.height}・{state.meta.duration.toFixed(1)} 秒）
-          </p>
-          <ParameterPanel
-            meta={state.meta}
-            value={params}
-            onChange={setParams}
-            advanced={mode === 'advanced'}
-          />
-          <div className="actions">
-            <button type="button" className="primary" onClick={startConvert}>
-              変換を実行
-            </button>
-            <button type="button" onClick={reset}>
-              別の動画を選ぶ
-            </button>
-          </div>
-        </>
-      )}
-
-      {state.kind === 'preparing' && (
-        <section>
-          <p>
-            <strong>{state.file.name}</strong> の変換準備中（ffmpeg.wasm を読み込み中）...
-          </p>
-          <ProgressBar progress={0} label="準備中" />
-        </section>
-      )}
-
-      {state.kind === 'converting' && (
-        <section>
-          <p>
-            <strong>{state.file.name}</strong> を変換中...
-          </p>
-          <ProgressBar progress={state.progress} />
-        </section>
-      )}
-
-      {state.kind === 'done' && (
-        <section>
-          <p>変換が完了しました。</p>
-          <DownloadButton blob={state.blob} filename={`${stripExt(state.file.name)}.gif`} />
-          <div className="actions">
-            <button type="button" onClick={reset}>
-              別の動画を変換
-            </button>
-          </div>
-        </section>
-      )}
-
-      {state.kind === 'error' && (
-        <section>
-          <p role="alert" className="error">エラー: {state.message}</p>
-          <div className="actions">
-            <button type="button" onClick={reset}>
-              最初に戻る
-            </button>
-          </div>
-        </section>
-      )}
+      <Footer />
 
       <ConfirmDialog
         open={pending !== null}
@@ -207,11 +191,10 @@ export function App() {
         message={pendingMessage(pending)}
         confirmLabel="続行"
         cancelLabel="キャンセル"
-        severity="warning"
         onConfirm={() => pending?.onConfirm()}
         onCancel={() => pending?.onCancel()}
       />
-    </main>
+    </div>
   );
 }
 
@@ -235,7 +218,9 @@ function pendingMessage(pending: Pending | null): ReactNode {
             選択された動画は <strong>{formatBytes(pending.bytes)}</strong> あります。
             ブラウザで扱える容量はメモリ次第で、変換中にタブが落ちる可能性があります。
           </p>
-          <p className="muted small">続行するか、もう少し小さなファイルを選び直してください。</p>
+          <p className="mute">
+            続行するか、もう少し小さなファイルを選び直してください。
+          </p>
         </>
       );
     case 'output-size':
@@ -243,12 +228,11 @@ function pendingMessage(pending: Pending | null): ReactNode {
         <>
           <p>
             このパラメータでの出力 GIF は{' '}
-            <strong>最大で約 {formatBytes(pending.estimatedBytes)}</strong> になる見込みです
-            （安全側に倒した推定値で、実際はこれより小さくなる傾向があります）。
+            <strong>最大で約 {formatBytes(pending.estimatedBytes)}</strong>{' '}
+            になる見込みです（安全側に倒した推定値で、実際はこれより小さくなる傾向があります）。
           </p>
-          <p className="muted small">
-            横幅・フレームレートを下げると、出力サイズと変換時間を抑えられます。続行する場合は OK
-            を押してください。
+          <p className="mute">
+            横幅・フレームレートを下げると、出力サイズと変換時間を抑えられます。続行する場合は「続行」を押してください。
           </p>
         </>
       );
@@ -259,9 +243,3 @@ function errorMessage(e: unknown): string {
   if (e instanceof Error) return e.message;
   return String(e);
 }
-
-function stripExt(name: string): string {
-  const dot = name.lastIndexOf('.');
-  return dot > 0 ? name.slice(0, dot) : name;
-}
-
