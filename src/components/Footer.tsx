@@ -5,12 +5,8 @@ export function Footer() {
   return (
     <footer className="foot">
       <span>© 2026 monorize</span>
-      <a href={guideHref} target="_blank" rel="noopener">
-        使い方
-      </a>
-      <a href={privacyHref} target="_blank" rel="noopener">
-        プライバシー
-      </a>
+      <a href={guideHref}>使い方</a>
+      <a href={privacyHref}>プライバシー</a>
       <a
         href="https://github.com/mrgarita/monorize"
         target="_blank"
