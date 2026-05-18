@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>プライバシー — monorize</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" crossorigin="anonymous" />
+
+<style>
+  :root{
+    --bg:#f6f5f2; --bg-2:#efece6; --surface:#fff;
+    --ink:#1a1a1c; --ink-2:#3b3b3f; --ink-3:#6b6b70; --mute:#9b9ba0;
+    --line:rgba(26,26,28,.10); --line-2:rgba(26,26,28,.06);
+    --accent-soft:rgba(26,26,28,.06);
+    --ok:#1f8a5b;
+    --radius:24px; --radius-md:18px; --radius-sm:12px;
+    --font-jp:"Noto Sans JP",-apple-system,system-ui,sans-serif;
+    --font-en:"Plus Jakarta Sans",-apple-system,system-ui,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:var(--font-jp);line-height:1.65;letter-spacing:-0.005em;
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+    min-height:100vh;
+  }
+  ::selection{background:var(--ink);color:var(--bg)}
+  a{color:inherit}
+
+  .topbar{
+    position:sticky;top:0;z-index:30;
+    background:color-mix(in oklab, var(--bg) 75%, transparent);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    backdrop-filter:blur(20px) saturate(180%);
+    border-bottom:.5px solid var(--line-2);
+  }
+  .topbar-row{
+    max-width:880px;margin:0 auto;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 24px;height:56px;
+  }
+  @media (min-width:768px){.topbar-row{padding:14px 40px}}
+  .brand{
+    display:inline-flex;align-items:center;gap:10px;
+    font-family:var(--font-en);font-weight:600;font-size:17px;letter-spacing:-0.03em;
+    text-decoration:none;color:var(--ink);
+  }
+  .brand-mark{
+    position:relative;width:22px;height:22px;border-radius:50%;
+    background:conic-gradient(from 220deg,#d3d3d6 0%,#1a1a1c 35%,#1a1a1c 65%,#d3d3d6 100%);
+    box-shadow:inset 0 0 0 .5px var(--line);overflow:hidden;
+  }
+  .brand-mark::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--bg)}
+  .back{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:13.5px;color:var(--ink-3);text-decoration:none;
+  }
+  .back:hover{color:var(--ink)}
+
+  main{max-width:720px;margin:0 auto;padding:64px 24px 96px}
+  @media (min-width:768px){main{padding:96px 40px 120px}}
+
+  .eyebrow{
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--mute);
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .eyebrow .pip{width:5px;height:5px;border-radius:50%;background:var(--ok)}
+  h1{
+    font-family:var(--font-jp);font-weight:700;
+    font-size:clamp(36px,5vw,52px);letter-spacing:-0.03em;line-height:1.1;
+    margin:14px 0 16px;text-wrap:balance;
+  }
+  .lede{color:var(--ink-3);font-size:17px;line-height:1.7;margin:0 0 32px;max-width:560px;text-wrap:pretty}
+  .updated{
+    font-family:var(--font-mono);font-size:11px;color:var(--mute);
+    letter-spacing:.04em;margin:0 0 48px;
+  }
+
+  .promise{
+    background:var(--surface);border:.5px solid var(--line-2);
+    border-radius:var(--radius);padding:32px;margin:0 0 56px;
+    display:flex;flex-direction:column;gap:20px;
+  }
+  .promise-row{
+    display:flex;gap:18px;align-items:flex-start;
+    padding-bottom:20px;border-bottom:.5px solid var(--line-2);
+  }
+  .promise-row:last-child{border-bottom:0;padding-bottom:0}
+  .promise-ico{
+    flex:none;width:36px;height:36px;border-radius:10px;
+    background:var(--bg-2);
+    display:grid;place-items:center;
+    color:var(--ink);
+  }
+  .promise-ico svg{width:18px;height:18px}
+  .promise h3{
+    margin:0 0 4px;font-family:var(--font-jp);
+    font-weight:600;font-size:16px;letter-spacing:-0.01em;
+  }
+  .promise p{margin:0;font-size:14px;color:var(--ink-3);line-height:1.6}
+
+  h2{
+    font-family:var(--font-jp);font-weight:700;font-size:22px;letter-spacing:-0.02em;
+    margin:56px 0 16px;line-height:1.3;
+  }
+  p{margin:0 0 14px;color:var(--ink-2);font-size:15px}
+  ul{margin:0 0 14px;padding-left:1.2em;color:var(--ink-2);font-size:15px}
+  ul li{margin-bottom:6px}
+  strong{color:var(--ink);font-weight:600}
+
+  .foot{
+    border-top:.5px solid var(--line-2);padding:22px 24px;text-align:center;
+    font-family:var(--font-mono);font-size:11px;color:var(--mute);letter-spacing:.04em;
+    margin-top:80px;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-row">
+    <a class="brand" href="./">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>monorize</span>
+    </a>
+    <a class="back" href="./">← ツールに戻る</a>
+  </div>
+</header>
+
+<main>
+  <div class="eyebrow"><span class="pip"></span>Privacy</div>
+  <h1>動画は、<br/>送信されません。</h1>
+  <p class="lede">monorize は純粋な静的 SPA（シングルページアプリ）です。動画の読み込みも変換も、すべてあなたのブラウザの中だけで行われます。</p>
+  <p class="updated">最終更新: 2026年5月15日</p>
+
+  <div class="promise">
+    <div class="promise-row">
+      <div class="promise-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a4 4 0 0 0-4 4v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z"/>
+        </svg>
+      </div>
+      <div>
+        <h3>動画はサーバへ送られません</h3>
+        <p>ffmpeg.wasm がブラウザ内で動作し、変換に必要な処理はすべてローカルで完結します。元動画も生成された GIF も、私たちのサーバを経由しません。</p>
+      </div>
+    </div>
+    <div class="promise-row">
+      <div class="promise-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="6" width="18" height="13" rx="2"/>
+          <path d="M3 10h18M7 15h4"/>
+        </svg>
+      </div>
+      <div>
+        <h3>サーバ側に保存しません</h3>
+        <p>そもそも私たちは動画を保管できる場所を持ちません。タブを閉じる、ページを再読み込みするなどでブラウザのメモリが解放された時点でデータは消滅します。</p>
+      </div>
+    </div>
+    <div class="promise-row">
+      <div class="promise-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+      </div>
+      <div>
+        <h3>アカウントもログインも不要</h3>
+        <p>個人を特定する情報の入力は求めません。利用にあたって登録は必要ありません。</p>
+      </div>
+    </div>
+  </div>
+
+  <h2>取得する情報</h2>
+  <p>monorize は、変換機能の提供にあたって以下の情報を取得・保存しません:</p>
+  <ul>
+    <li>変換した動画の内容</li>
+    <li>生成された GIF</li>
+    <li>ファイル名・サイズ・解像度などのメタデータ</li>
+    <li>あなたを個人として特定できる情報</li>
+  </ul>
+
+  <h2>配信について</h2>
+  <p>本サイトは <strong>GitHub Pages</strong> または <strong>XServer</strong> 上で配信されます。これらの配信元では、一般的な Web サーバの動作として、リクエストログ（接続元 IP アドレス、リクエスト時刻、ユーザーエージェント等）が一定期間記録される場合があります。これは monorize 独自の収集ではなく、配信プラットフォーム側の標準的な挙動です。</p>
+  <p>monorize 自身は、計測タグ・解析スクリプト・トラッキング Cookie の類を一切埋め込んでいません。</p>
+
+  <h2>第三者への提供</h2>
+  <p>取得していない情報を提供することはありません。</p>
+
+  <h2>セキュリティに関する留意点</h2>
+  <p>変換中の動画・GIF は、お使いの端末のブラウザのメモリ上にのみ存在します。<strong>共有端末でご利用の場合、変換が終わったらタブを閉じることをおすすめします</strong>。</p>
+
+  <h2>このページの更新</h2>
+  <p>仕様や運用が変わり、本ページの記載と差が生じる場合は内容を更新します。重要な変更がある場合は、更新日とともに変更点を明示します。</p>
+
+  <h2>お問い合わせ</h2>
+  <p>プライバシーに関するご質問は、<a href="https://github.com/mrgarita/monorize" target="_blank" rel="noopener">GitHub リポジトリ</a> の Issues にてお寄せください。</p>
+</main>
+
+<footer class="foot">© 2026 monorize</footer>
+
+</body>
+</html>

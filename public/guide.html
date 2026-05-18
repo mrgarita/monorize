@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>使い方 — monorize</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" crossorigin="anonymous" />
+
+<style>
+  :root{
+    --bg:#f6f5f2; --bg-2:#efece6; --surface:#fff;
+    --ink:#1a1a1c; --ink-2:#3b3b3f; --ink-3:#6b6b70; --mute:#9b9ba0;
+    --line:rgba(26,26,28,.10); --line-2:rgba(26,26,28,.06);
+    --accent-soft:rgba(26,26,28,.06);
+    --ok:#1f8a5b;
+    --radius:24px; --radius-md:18px; --radius-sm:12px;
+    --font-jp:"Noto Sans JP",-apple-system,system-ui,sans-serif;
+    --font-en:"Plus Jakarta Sans",-apple-system,system-ui,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:var(--font-jp);line-height:1.65;letter-spacing:-0.005em;
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+    min-height:100vh;
+  }
+  ::selection{background:var(--ink);color:var(--bg)}
+  a{color:inherit}
+
+  .topbar{
+    position:sticky;top:0;z-index:30;
+    background:color-mix(in oklab, var(--bg) 75%, transparent);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    backdrop-filter:blur(20px) saturate(180%);
+    border-bottom:.5px solid var(--line-2);
+  }
+  .topbar-row{
+    max-width:880px;margin:0 auto;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 24px;height:56px;
+  }
+  @media (min-width:768px){.topbar-row{padding:14px 40px}}
+  .brand{
+    display:inline-flex;align-items:center;gap:10px;
+    font-family:var(--font-en);font-weight:600;font-size:17px;letter-spacing:-0.03em;
+    text-decoration:none;color:var(--ink);
+  }
+  .brand-mark{
+    position:relative;width:22px;height:22px;border-radius:50%;
+    background:conic-gradient(from 220deg,#d3d3d6 0%,#1a1a1c 35%,#1a1a1c 65%,#d3d3d6 100%);
+    box-shadow:inset 0 0 0 .5px var(--line);overflow:hidden;
+  }
+  .brand-mark::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--bg)}
+  .back{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:13.5px;color:var(--ink-3);text-decoration:none;
+  }
+  .back:hover{color:var(--ink)}
+
+  main{max-width:720px;margin:0 auto;padding:64px 24px 96px}
+  @media (min-width:768px){main{padding:96px 40px 120px}}
+
+  .eyebrow{
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--mute);
+  }
+  h1{
+    font-family:var(--font-jp);font-weight:700;
+    font-size:clamp(36px,5vw,52px);letter-spacing:-0.03em;line-height:1.1;
+    margin:14px 0 16px;text-wrap:balance;
+  }
+  .lede{color:var(--ink-3);font-size:17px;line-height:1.7;margin:0 0 56px;max-width:560px;text-wrap:pretty}
+
+  h2{
+    font-family:var(--font-jp);font-weight:700;font-size:24px;letter-spacing:-0.02em;
+    margin:64px 0 20px;line-height:1.3;
+  }
+  h3{
+    font-family:var(--font-jp);font-weight:600;font-size:16px;letter-spacing:-0.01em;
+    margin:24px 0 8px;
+  }
+  p{margin:0 0 14px;color:var(--ink-2);font-size:15px}
+
+  .steps{
+    counter-reset:s;list-style:none;padding:0;margin:32px 0;
+    display:flex;flex-direction:column;gap:16px;
+  }
+  .steps li{
+    counter-increment:s;
+    background:var(--surface);border:.5px solid var(--line-2);
+    border-radius:var(--radius-md);padding:24px 28px;
+    display:flex;gap:20px;align-items:flex-start;
+  }
+  .steps li::before{
+    content:counter(s,decimal-leading-zero);
+    font-family:var(--font-en);font-weight:600;font-size:14px;
+    letter-spacing:.04em;color:var(--mute);
+    flex:none;padding-top:2px;min-width:24px;
+  }
+  .steps h3{margin:0 0 6px;font-size:17px;font-weight:600}
+  .steps p{margin:0;font-size:14px;color:var(--ink-3);line-height:1.6}
+
+  .callout{
+    background:var(--accent-soft);
+    border-radius:var(--radius-sm);
+    padding:18px 22px;margin:24px 0;
+    font-size:14px;color:var(--ink-2);
+    display:flex;gap:14px;
+  }
+  .callout .ico{
+    flex:none;width:20px;height:20px;border-radius:50%;
+    background:var(--ink);color:var(--bg);
+    display:grid;place-items:center;font-size:12px;font-weight:700;
+    font-family:var(--font-en);
+  }
+
+  table{
+    width:100%;border-collapse:collapse;margin:16px 0 0;
+    font-size:14px;
+  }
+  th,td{
+    text-align:left;padding:12px 16px;
+    border-bottom:.5px solid var(--line-2);
+  }
+  th{font-weight:500;color:var(--mute);font-size:12px;font-family:var(--font-mono);letter-spacing:.04em;text-transform:uppercase}
+  td{color:var(--ink-2)}
+  td.k{font-weight:500;color:var(--ink);width:40%}
+  .mono{font-family:var(--font-mono);font-size:13px}
+
+  .foot{
+    border-top:.5px solid var(--line-2);padding:22px 24px;text-align:center;
+    font-family:var(--font-mono);font-size:11px;color:var(--mute);letter-spacing:.04em;
+    margin-top:80px;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-row">
+    <a class="brand" href="./">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>monorize</span>
+    </a>
+    <a class="back" href="./">← ツールに戻る</a>
+  </div>
+</header>
+
+<main>
+  <span class="eyebrow">— Guide</span>
+  <h1>使い方</h1>
+  <p class="lede">動画を選び、好みのサイズと滑らかさを決め、変換するだけ。すべてあなたのブラウザの中で完結します。</p>
+
+  <h2>4ステップ</h2>
+  <ol class="steps">
+    <li>
+      <div>
+        <h3>動画を選ぶ</h3>
+        <p>ファイルをドラッグ&amp;ドロップするか、「ファイルを選択」ボタンから読み込みます。対応形式は .mp4 / .mov / .avi / .mkv / .webm / .wmv / .flv / .m4v / .ts / .3gp。</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <h3>パラメータを調整</h3>
+        <p>横幅・縦幅・フレームレートをスライダーまたは数値入力で指定します。縦横比は元動画にロックされ、片方の値を変えると他方は自動で追従します。</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <h3>変換を実行</h3>
+        <p>「変換を実行」を押すと、ffmpeg.wasm がブラウザ内で動作してモノクロのアニメーション GIF を生成します。動画はネットワーク越しに送信されません。</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <h3>ダウンロード</h3>
+        <p>変換が完了したら、そのままダウンロードボタンを押すと GIF が保存されます。タブを閉じるとブラウザ上のデータは消えます。</p>
+      </div>
+    </li>
+  </ol>
+
+  <h2>表示モード</h2>
+  <p><strong>シンプル</strong>は最小限のスライダーのみを表示します。<strong>詳細</strong>では、縦横比ロックの解除、px/% の単位切り替え、縦幅の個別指定ができます。</p>
+
+  <h2>仕様と制約</h2>
+  <table>
+    <thead>
+      <tr><th>項目</th><th>内容</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="k">入力サイズ推奨上限</td><td>500 MB（超過時に警告ダイアログ。続行可）</td></tr>
+      <tr><td class="k">出力サイズ警告</td><td>推定 200 MB 超で警告（推定式 <span class="mono">W×H×fps×秒×0.30</span>）</td></tr>
+      <tr><td class="k">横幅・縦幅</td><td>下限 32 px、上限は元動画の実サイズ。アップスケール不可</td></tr>
+      <tr><td class="k">フレームレート</td><td>1〜30 fps</td></tr>
+      <tr><td class="k">出力形式</td><td>モノクロのアニメーション GIF</td></tr>
+      <tr><td class="k">1 操作あたり</td><td>1 ファイル（バッチ処理は行いません）</td></tr>
+    </tbody>
+  </table>
+
+  <h2>モバイル端末について</h2>
+  <div class="callout">
+    <span class="ico" aria-hidden="true">!</span>
+    <div>
+      iPhone / iPad など RAM の少ない端末では、長尺・高解像度の動画でブラウザのメモリ上限を超えると、Safari がタブを強制リロードする場合があります。これは Safari 側の挙動で、本アプリのエラーではありません。<br><br>
+      モバイルや旧端末では、まず<strong>数十秒程度の短い動画</strong>から試すことをおすすめします。PC など RAM に余裕がある環境では 500 MB 程度を目安に扱えます。
+    </div>
+  </div>
+
+  <h2>変換中・変換後のヒント</h2>
+  <p>変換中はタブを閉じないでください。完了後はブラウザのメモリ上にのみ GIF が保持されるため、ダウンロード前にタブを閉じるとデータは失われます。</p>
+  <p>出力サイズを抑えたい場合は、横幅を小さくするか、フレームレートを下げてください。同じ尺の動画でも、横幅を半分にするとファイルサイズはおよそ 1/4 になります。</p>
+</main>
+
+<footer class="foot">© 2026 monorize</footer>
+
+</body>
+</html>
