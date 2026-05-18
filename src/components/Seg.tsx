@@ -20,13 +20,26 @@ export function Seg<T extends string>({ value, options, onChange, small, ariaLab
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const idx = options.findIndex((o) => o.value === value);
-    if (idx < 0) return;
-    const btn = el.querySelectorAll<HTMLButtonElement>('button[data-seg]')[idx];
-    if (!btn) return;
-    const r = btn.getBoundingClientRect();
-    const pr = el.getBoundingClientRect();
-    setPill({ left: r.left - pr.left, width: r.width });
+
+    const measure = () => {
+      const idx = options.findIndex((o) => o.value === value);
+      if (idx < 0) return;
+      const btn = el.querySelectorAll<HTMLButtonElement>('button[data-seg]')[idx];
+      if (!btn) return;
+      const r = btn.getBoundingClientRect();
+      const pr = el.getBoundingClientRect();
+      setPill({ left: r.left - pr.left, width: r.width });
+    };
+
+    measure();
+
+    // Web フォントが後から swap されるとボタン幅が変わる。
+    // 各ボタンの ResizeObserver で追従し pill のズレを防ぐ。
+    const ro = new ResizeObserver(measure);
+    el
+      .querySelectorAll<HTMLButtonElement>('button[data-seg]')
+      .forEach((b) => ro.observe(b));
+    return () => ro.disconnect();
   }, [value, options]);
 
   return (
