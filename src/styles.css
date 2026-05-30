@@ -841,6 +841,14 @@ select {
   .actions-row {
     flex-direction: column-reverse;
   }
+  /* 縦並びでは主軸が高さになり flex:1(=flex-basis:0) が .btn の height を
+     潰してしまう。flex をリセットして高さを保ち、タップ領域を 52px 確保する
+     （幅は従来どおりフル幅。.dlg-actions と同じ方針）。 */
+  .actions-row .btn {
+    flex: none;
+    width: 100%;
+    height: 52px;
+  }
 }
 
 /* ─── converting view ─── */
