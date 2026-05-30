@@ -34,9 +34,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # 本番は独立オリジン monorize.dianxnao.com のルート配信のため base を / にする
+      # （ステージング Pages は github.io/monorize/ なので既定の /monorize/ のまま）。
       - name: Build (st-only)
         env:
           FFMPEG_ST_ONLY: '1'
+          MONORIZE_BASE: '/'
         run: npm run build
 
       - name: Setup SSH key
