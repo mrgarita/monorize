@@ -12,6 +12,8 @@
 - **フロントエンド**：Vite + React + TypeScript
 - **変換エンジン**：[ffmpeg.wasm](https://ffmpegwasm.netlify.app/) 0.12 系
   （`public/ffmpeg/` に self-host）
+- **PWA 対応**：[vite-plugin-pwa](https://vite-pwa-org.netlify.app/)（ホーム画面に
+  追加してアプリとして利用可。下記「アプリとして使う」参照）
 - **ステージング**：GitHub Pages（st 版） — 公開中
 - **本番**：XServer（st 版） — `https://dianxnao.com/monorize/`
 
@@ -31,8 +33,8 @@
 - `src/` — アプリ本体（React コンポーネント・ffmpeg ラッパ・変換ロジック）
 - `public/ffmpeg/` — self-host する `@ffmpeg/core` 実体（`scripts/copy-ffmpeg-core.mjs`
   が `node_modules` から `predev`/`prebuild` でコピー。`.gitignore` 済）
-- `scripts/` — `copy-ffmpeg-core.mjs`（self-host コピー）と `m2b/`（10,000 件
-  ローカル自動化ハーネス）
+- `scripts/` — `copy-ffmpeg-core.mjs`（self-host コピー）、`generate-icons.mjs`
+  （PWA アイコン生成）と `m2b/`（10,000 件ローカル自動化ハーネス）
 - `.github/workflows/deploy-pages.yml` — GitHub Pages デプロイの CI 定義
 - `.github/workflows/deploy-xserver.yml` — XServer 本番デプロイの CI 定義
 - [`docs/cost.md`](./docs/cost.md) — 運用コスト見積
@@ -71,6 +73,28 @@ WebContent プロセスが OOM で再起動した際の挙動です。
 - iPhone 8 / iOS 16.7.16 / 本番 (`https://dianxnao.com/monorize/`): 基本動作・
   ファイル選択・短尺動画の変換と DL は OK。3 分動画では上記の Safari 強制
   リロードを確認
+
+## アプリとして使う（PWA）
+
+本アプリは PWA（Progressive Web App）対応です。対応ブラウザで開くと、
+**スマホ／PC のホーム画面・アプリ一覧に追加して、ブラウザの UI なしの
+単独アプリとして起動**できます。
+
+- **インストール**：Android Chrome / デスクトップ Chrome・Edge は「アプリを
+  インストール」、iOS Safari は共有メニュー →「ホーム画面に追加」。
+- **オフライン**：アプリ本体（HTML/CSS/JS とアイコン）は Service Worker が
+  プリキャッシュするため、2 回目以降はオフラインでも起動します。約 25 MB の
+  ffmpeg コアは初回変換時にキャッシュされ、以降はオフラインでも変換可能です。
+- **更新**：`registerType: 'autoUpdate'` のため、再デプロイ後は次回読み込み時に
+  自動で最新版へ更新されます。
+- **アイコン**：`scripts/generate-icons.mjs`（Node 標準のみ・依存ゼロ）で
+  `public/` 配下に生成。意匠を変えたいときは同スクリプトを編集して
+  `npm run icons` で再生成します。
+- 設定は `vite.config.ts` の `VitePWA({ ... })`（manifest・キャッシュ戦略）に
+  集約しています。
+
+> 変換中のメモリ挙動は通常のブラウザ利用時と同じです。低 RAM 端末での
+> Safari 強制リロード（下記）はインストール後も同様に起こり得ます。
 
 ## サンプル素材について
 
@@ -111,6 +135,7 @@ npm ci
 | `npm run build` | 本番ビルド（`tsc -b && vite build`） |
 | `npm run preview` | `dist/` を `vite preview` で配信して動作確認 |
 | `npm run typecheck` | 型チェックのみ（`tsc -b --noEmit`） |
+| `npm run icons` | PWA 用アイコンを `public/` に再生成（`scripts/generate-icons.mjs`） |
 | `N=10 npm run m2b:harness` | 10,000 件ローカル自動化ハーネスを N 件で実行（M2-B） |
 | `FFMPEG_ST_ONLY=1 npm run build` | core-mt を除外したステージング相当ビルド |
 
