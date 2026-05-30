@@ -80,9 +80,9 @@
 - **変換エンジン**：[ffmpeg.wasm](https://ffmpegwasm.netlify.app/)
   （WebAssembly 版 ffmpeg）。フィルタは `scale=W:trunc(ow/dar/2)*2,hue=s=0`
   をそのまま使える
-- **本番配信**：XServer（既存契約のレンタルサーバ）。既存ドメインの
-  `/monorize/` サブパス配下に配置。`.htaccess` で COOP/COEP を設定し、
-  ffmpeg.wasm のマルチスレッド版を有効化
+- **本番配信**：XServer（既存契約のレンタルサーバ）。独立サブドメイン
+  **`https://monorize.dianxnao.com/`** のルートに配置（旧 `dianxnao.com/monorize/`
+  は 301）。配信は st 版のみで COOP/COEP 不要（mt 版は GIF でハングのため不使用）
 - **ステージング配信**：GitHub Pages（無料）。COOP/COEP を設定できないため
   ffmpeg.wasm のシングルスレッド版を使用
 - **保持ポリシー**：サーバを持たないため不要。ファイルはブラウザのメモリ
@@ -122,6 +122,14 @@
   `no-cache` にする。COOP/COEP は st 版配信のため引き続き不要。`.htaccess` が nginx
   直配信で無視される場合はサーバーパネルの MIME 設定で代替する（2026-05-30 に
   `v0.3.0` で発覚 → 修正）
+- **独立オリジン化（`monorize.dianxnao.com`）**：サブパス公開だと、同一オリジン
+  `dianxnao.com` 側にサイト全体スコープの PWA／ホーム画面アプリが入ると monorize を
+  別アプリとしてインストールできなくなる（PWA はオリジン＋スコープ単位）。これを
+  避けるため独立サブドメインへ移行。本番ビルドのみ `MONORIZE_BASE=/`（`deploy-xserver.yml`）
+  でルート配信し、`public/.htaccess` で非サブドメインホストを 301。Pages ステージングは
+  `github.io/monorize/` のため base は既定 `/monorize/` のまま（環境別 base）。
+  サブドメイン docroot は XServer 既定で既存 `public_html/monorize/`（現デプロイ先）と
+  同一になる想定（異なる場合のみサーバ側 rrsync パスを更新）。2026-05-30 `v0.4.0`
 
 新たな仕様判断が必要になった場合（例：wasm のメモリ上限に絡む UI 警告の細部、
 ステージング公開設定の細部など）はコードを書く前にユーザーへ確認してください。
