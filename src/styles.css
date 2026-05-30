@@ -446,12 +446,15 @@ select {
   transform: translateY(-1px);
 }
 .btn-secondary {
-  background: transparent;
-  border-color: var(--line);
+  /* 透明背景＋極薄ボーダーだとカード上でボタンに見えないため、
+     淡い地色とはっきりした枠線でボタンらしさを出す（ライト／ダーク両対応）。 */
+  background: var(--bg-2);
+  border: 1px solid var(--mute);
   color: var(--ink);
 }
 .btn-secondary:hover:not(:disabled) {
-  background: var(--accent-soft);
+  border-color: var(--ink-2);
+  transform: translateY(-1px);
 }
 .btn .arr {
   transition: transform 0.2s ease;
