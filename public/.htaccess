@@ -1,0 +1,15 @@
+# nginx/Apache 既定の mime.types に無い拡張子を補う（PWA インストール可否に直結）。
+# manifest が application/manifest+json で配信されないと Chrome がインストール可能と
+# 判定しないため、ここで明示する。.wasm は application/wasm で instantiateStreaming を有効化。
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+  AddType application/wasm .wasm
+</IfModule>
+
+# Service Worker と manifest は常に再検証させ、PWA 更新の取りこぼしや
+# 古いアプリシェルの残留を防ぐ。
+<IfModule mod_headers.c>
+  <FilesMatch "(sw\.js|registerSW\.js|manifest\.webmanifest)$">
+    Header set Cache-Control "no-cache, max-age=0, must-revalidate"
+  </FilesMatch>
+</IfModule>

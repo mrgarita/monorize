@@ -114,6 +114,14 @@
   壊す懸念はない。アイコンは `scripts/generate-icons.mjs`（**Node 標準のみ・依存ゼロ**、
   `zlib` ＋ 手書き CRC32 で PNG を直接生成）で `public/` 配下に生成し、`npm run icons`
   で再生成する
+- **本番の MIME 補正（`public/.htaccess`）**：XServer は nginx 配信で既定 mime.types に
+  `.webmanifest` / `.wasm` が無く、manifest が Content-Type 無しで返ると Chrome が
+  PWA をインストール可能と判定しない。`public/.htaccess`（dist にコピーされ rsync で
+  配信）で `AddType application/manifest+json .webmanifest` と
+  `AddType application/wasm .wasm` を補い、`sw.js` / `manifest.webmanifest` は
+  `no-cache` にする。COOP/COEP は st 版配信のため引き続き不要。`.htaccess` が nginx
+  直配信で無視される場合はサーバーパネルの MIME 設定で代替する（2026-05-30 に
+  `v0.3.0` で発覚 → 修正）
 
 新たな仕様判断が必要になった場合（例：wasm のメモリ上限に絡む UI 警告の細部、
 ステージング公開設定の細部など）はコードを書く前にユーザーへ確認してください。
