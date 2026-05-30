@@ -15,7 +15,8 @@
 - **PWA 対応**：[vite-plugin-pwa](https://vite-pwa-org.netlify.app/)（ホーム画面に
   追加してアプリとして利用可。下記「アプリとして使う」参照）
 - **ステージング**：GitHub Pages（st 版） — 公開中
-- **本番**：XServer（st 版） — `https://dianxnao.com/monorize/`
+- **本番**：XServer（st 版） — `https://monorize.dianxnao.com/`（独立サブドメイン。
+  旧 URL `https://dianxnao.com/monorize/` は 301 リダイレクト）
 
 | マイルストーン | 状態 |
 |---|---|
@@ -179,12 +180,20 @@ core-mt は GIF エンコードでハングするため st 既定）なので、
 （`workflow_dispatch`）で本番にデプロイされます。
 **main の push では本番に反映されません**（事故防止）。
 
-- **公開 URL**：`https://dianxnao.com/monorize/`
+- **公開 URL**：`https://monorize.dianxnao.com/`（独立サブドメイン）。
+  旧 `https://dianxnao.com/monorize/` は `public/.htaccess` でサブドメインへ
+  301 リダイレクト。**独立オリジンにしたのは PWA インストールのスコープ衝突回避のため**
+  （ブログ側が `dianxnao.com` 全体スコープのアプリを持つと、サブパスの monorize が
+  別アプリとしてインストールできなくなる）
+- **base の差異**：本番ビルドのみ `MONORIZE_BASE=/`（サブドメイン直下配信）。
+  ステージング Pages は `github.io/monorize/` のため既定の `/monorize/` のまま。
+  `vite.config.ts` の `base: process.env.MONORIZE_BASE ?? '/monorize/'` で切替
 - **ワークフロー**：[`.github/workflows/deploy-xserver.yml`](./.github/workflows/deploy-xserver.yml)
 - **配信内容**：ステージングと同じく **st 版のみ**（`FFMPEG_ST_ONLY=1`）。
   プラン A — `core-mt` は GIF コーデックでハングする既知問題があり
-  （`docs/m2a-verification.md`）、本番でも mt 版を配信せず `.htaccess` の
-  COOP/COEP も設定不要
+  （`docs/m2a-verification.md`）、本番でも mt 版を配信せず COOP/COEP も設定不要。
+  ただし PWA の MIME 補正用に `public/.htaccess` を配置（webmanifest / wasm の
+  AddType、sw.js・manifest の no-cache、上記 301 リダイレクト）
 
 ### リリース手順（コード上の作業のみ）
 

@@ -1,3 +1,13 @@
+# 正規ホストは monorize.dianxnao.com（独立オリジン）。同一フォルダを共有する
+# 旧 URL（dianxnao.com/monorize/...）等からのアクセスはサブドメインへ 301。
+# これにより PWA スコープがブログ側オリジンと衝突せず両方インストール可能になる。
+# ※GitHub Pages は .htaccess を無視するためステージングには無影響。
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP_HOST} !^monorize\.dianxnao\.com$ [NC]
+  RewriteRule ^(.*)$ https://monorize.dianxnao.com/$1 [R=301,L]
+</IfModule>
+
 # nginx/Apache 既定の mime.types に無い拡張子を補う（PWA インストール可否に直結）。
 # manifest が application/manifest+json で配信されないと Chrome がインストール可能と
 # 判定しないため、ここで明示する。.wasm は application/wasm で instantiateStreaming を有効化。
