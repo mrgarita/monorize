@@ -103,6 +103,17 @@
   core / core-mt はリポジトリ内 `public/ffmpeg/` に self-host する
 - **Node.js 環境**：Volta 経由で Node 24 LTS を導入済み（`package.json` の `volta`
   フィールドで pin する）
+- **PWA 化**：`vite-plugin-pwa@1.3.0`（完全一致 pin、devDependency）を使用。
+  `generateSW` モード ＋ `registerType: 'autoUpdate'`。設定は `vite.config.ts` の
+  `VitePWA({ ... })` に集約。`base`（`/monorize/`）はプラグインが自動追従するため
+  manifest パス・SW スコープともサブパス対応済み。キャッシュ方針は **アプリ本体を
+  プリキャッシュ**し、約 25 MB の ffmpeg コア（`/ffmpeg/`）は `globIgnores` で
+  プリキャッシュ対象から外して **初回変換時に CacheFirst** でランタイムキャッシュ
+  （2 回目以降はオフライン可）。本番・ステージングとも st 版配信で
+  `crossOriginIsolated` を要さないため、同一オリジンの SW がアイソレーションを
+  壊す懸念はない。アイコンは `scripts/generate-icons.mjs`（**Node 標準のみ・依存ゼロ**、
+  `zlib` ＋ 手書き CRC32 で PNG を直接生成）で `public/` 配下に生成し、`npm run icons`
+  で再生成する
 
 新たな仕様判断が必要になった場合（例：wasm のメモリ上限に絡む UI 警告の細部、
 ステージング公開設定の細部など）はコードを書く前にユーザーへ確認してください。
