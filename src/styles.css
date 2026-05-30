@@ -449,7 +449,7 @@ select {
   /* 透明背景＋極薄ボーダーだとカード上でボタンに見えないため、
      淡い地色とはっきりした枠線でボタンらしさを出す（ライト／ダーク両対応）。 */
   background: var(--bg-2);
-  border: 1px solid var(--mute);
+  border: 0.5px solid var(--mute);
   color: var(--ink);
 }
 .btn-secondary:hover:not(:disabled) {
