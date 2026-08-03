@@ -104,7 +104,7 @@ mt 推奨」と記載があるが、本プロダクトの出力形式（GIF）�
 2. `npm run dev` で Vite dev サーバを起動
 3. `http://localhost:5173/monorize/` を開く（既定で st モード）
 4. `sample/<NAME>.MP4` を投入し、横幅 640・fps 15 で変換、`<NAME>.gif`
-   をダウンロードして `D:/monorize/tmp/` 等に保存
+   をダウンロードして `D:/claude/monorize/tmp/` 等に保存
 5. 上記 `ffprobe` コマンドで `sample/<NAME>.gif` と突き合わせる
 
 mt 版の挙動を確認したい場合は `http://localhost:5173/monorize/?ff=mt`
